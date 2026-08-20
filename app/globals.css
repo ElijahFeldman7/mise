@@ -1,0 +1,132 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   mise — paper, one accent, as few lines as the layout will tolerate.
+   Rules: no shadows, no uppercase, letter-spacing only ever tightens.
+--------------------------------------------------------------------------- */
+
+:root {
+  --paper: #f8f5f0;
+  --rule: #eae6de;
+  --rule-strong: #d3cfc7;
+  --margin-line: #f4e0d6;
+
+  --ink: #2e2b27;
+  --ink-soft: #6c6864;
+  --ink-faint: #9c9793;
+  --ink-ghost: #c3b9a8;
+
+  --accent: #b75b35;
+  --accent-line: #eec7b4;
+  --accent-wash: #fee5dc;
+
+  --got: #2c8e51;
+  --them: #327cc2;
+
+  --photo-empty: #ece7dd;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-margin-line: var(--margin-line);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-ink-ghost: var(--ink-ghost);
+  --color-accent: var(--accent);
+  --color-accent-line: var(--accent-line);
+  --color-accent-wash: var(--accent-wash);
+  --color-got: var(--got);
+  --color-them: var(--them);
+  --color-photo-empty: var(--photo-empty);
+
+  --font-sans: var(--font-geist-sans);
+  --font-hand: var(--font-caveat);
+}
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  overflow-x: hidden;
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+/* Nothing in this app is elevated. */
+* {
+  box-shadow: none !important;
+  text-transform: none !important;
+}
+
+input,
+textarea,
+select,
+button {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  outline: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--ink-faint);
+}
+
+/* Fields are one line, never a box. */
+.field {
+  border-bottom: 1px solid var(--rule-strong);
+  padding-bottom: 9px;
+  width: 100%;
+}
+
+.field:focus-within {
+  border-bottom-color: var(--accent);
+}
+
+/* The signature: a heading underlined in the accent. */
+.heading {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  display: inline-block;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 3px;
+}
+
+/* Ruled margin down the grocery list. */
+.margin-rule::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 51px;
+  width: 1px;
+  background: var(--margin-line);
+}
+
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fade-in {
+    animation: fade-in 180ms ease-out both;
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

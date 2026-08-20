@@ -1,0 +1,466 @@
+[
+  {
+    "title": "Sheet-pan chicken & lemon potatoes",
+    "description": "One pan, forty-five minutes, and the potatoes cook in the chicken fat. The weeknight standard.",
+    "cuisine": "Mediterranean",
+    "category": "dinner",
+    "tags": ["one pan", "weeknight"],
+    "servings": 4,
+    "total_minutes": 50,
+    "oven_temp_f": 425,
+    "ingredients": [
+      { "measure": "4", "item": "bone-in chicken thighs" },
+      { "measure": "2 lb", "item": "Yukon gold potatoes, halved" },
+      { "measure": "2", "item": "lemons" },
+      { "measure": "1 head", "item": "garlic" },
+      { "measure": "3 tbsp", "item": "olive oil" },
+      { "measure": "2 tsp", "item": "dried oregano" },
+      { "measure": "1 tsp", "item": "salt" },
+      { "measure": "1 tsp", "item": "black pepper" }
+    ],
+    "instructions": [
+      "Heat the oven to 425°F with a rack in the lower third.",
+      "Toss the potatoes with 2 tbsp of the oil, the oregano and a lot of salt. Spread them on a sheet pan and roast 15 minutes on their own.",
+      "Meanwhile pat the thighs dry, rub with the last of the oil, and season hard on both sides.",
+      "Cut one lemon into wedges and separate the garlic head into unpeeled cloves.",
+      "Nestle the thighs skin-up among the potatoes with the lemon wedges and garlic. Back in for 30 minutes, until the thickest thigh reads 175°F and the skin has gone properly brown.",
+      "Squeeze the second lemon over everything at the table."
+    ]
+  },
+  {
+    "title": "Red lentil dal",
+    "description": "Thirty-five minutes, mostly unattended, and it gets better the next day.",
+    "cuisine": "Indian",
+    "category": "dinner",
+    "tags": ["vegetarian", "batch", "weeknight"],
+    "servings": 6,
+    "total_minutes": 35,
+    "ingredients": [
+      { "measure": "2 cups", "item": "red lentils" },
+      { "measure": "2", "item": "yellow onions, diced" },
+      { "measure": "4 cloves", "item": "garlic, minced" },
+      { "measure": "2 tbsp", "item": "fresh ginger, grated" },
+      { "measure": "2 tsp", "item": "cumin" },
+      { "measure": "1 tsp", "item": "turmeric" },
+      { "measure": "1 tsp", "item": "garam masala" },
+      { "measure": "1 can", "item": "canned tomatoes" },
+      { "measure": "1 can", "item": "coconut milk" },
+      { "measure": "3 tbsp", "item": "vegetable oil" },
+      { "measure": "1 bunch", "item": "cilantro" },
+      { "measure": "2 tsp", "item": "salt" }
+    ],
+    "instructions": [
+      "Rinse the lentils until the water runs clear.",
+      "Cook the onions in the oil over medium heat until they go soft and start to colour, about 8 minutes. Add the garlic and ginger and cook one minute more.",
+      "Add the dry spices straight to the hot oil and stir for 30 seconds — you want to smell them before anything wet goes in.",
+      "Add the tomatoes, lentils, coconut milk and 2 cups of water. Bring to a boil, then drop to a bare simmer.",
+      "Cook 20 to 25 minutes, stirring now and then, until the lentils have collapsed and it looks like porridge.",
+      "Salt to taste and finish with a lot of chopped cilantro."
+    ]
+  },
+  {
+    "title": "Miso salmon & greens",
+    "description": "Under the broiler in eight minutes. The glaze does all the work.",
+    "cuisine": "Japanese",
+    "category": "dinner",
+    "tags": ["fast", "weeknight"],
+    "servings": 2,
+    "total_minutes": 25,
+    "oven_temp_f": 500,
+    "ingredients": [
+      { "measure": "2", "item": "salmon fillets" },
+      { "measure": "3 tbsp", "item": "white miso" },
+      { "measure": "2 tbsp", "item": "mirin" },
+      { "measure": "1 tbsp", "item": "soy sauce" },
+      { "measure": "1 tbsp", "item": "honey" },
+      { "measure": "10 oz", "item": "baby spinach" },
+      { "measure": "2 cloves", "item": "garlic, sliced" },
+      { "measure": "1 tbsp", "item": "sesame oil" },
+      { "measure": "2", "item": "green onions" }
+    ],
+    "instructions": [
+      "Whisk the miso, mirin, soy and honey into a thick glaze.",
+      "Pat the salmon dry, spread the glaze over the top, and leave it 15 minutes on the counter while the broiler heats.",
+      "Broil on a foil-lined tray 6 inches from the element, 6 to 8 minutes, until the glaze blisters and the fish flakes.",
+      "While it cooks, wilt the spinach with the garlic in the sesame oil, about 2 minutes.",
+      "Serve the salmon on the greens with the green onions sliced over."
+    ]
+  },
+  {
+    "title": "Chickpea shakshuka",
+    "description": "A pantry dinner. Eggs poached in spiced tomato, scooped up with bread.",
+    "cuisine": "Middle Eastern",
+    "category": "dinner",
+    "tags": ["vegetarian", "pantry", "fast"],
+    "servings": 4,
+    "total_minutes": 30,
+    "ingredients": [
+      { "measure": "1 can", "item": "chickpeas, drained" },
+      { "measure": "1 can", "item": "canned tomatoes" },
+      { "measure": "1", "item": "yellow onion, sliced" },
+      { "measure": "1", "item": "red bell pepper, sliced" },
+      { "measure": "3 cloves", "item": "garlic, sliced" },
+      { "measure": "2 tsp", "item": "cumin" },
+      { "measure": "2 tsp", "item": "paprika" },
+      { "measure": "6", "item": "eggs" },
+      { "measure": "3 tbsp", "item": "olive oil" },
+      { "measure": "4 oz", "item": "feta" },
+      { "measure": "1 bunch", "item": "parsley" }
+    ],
+    "instructions": [
+      "Cook the onion and pepper in the oil in a wide pan over medium heat until soft, about 8 minutes.",
+      "Add the garlic, cumin and paprika, and stir for a minute until fragrant.",
+      "Add the tomatoes and chickpeas, season, and simmer 10 minutes until it thickens enough to hold a spoon-track.",
+      "Make six wells and crack an egg into each. Cover and cook 5 to 7 minutes, until the whites are set but the yolks still move.",
+      "Crumble the feta over, scatter the parsley, and bring the pan to the table with bread."
+    ]
+  },
+  {
+    "title": "Ginger pork noodles",
+    "description": "Twenty minutes, one wok, and the sauce comes together in the pan.",
+    "cuisine": "Chinese",
+    "category": "dinner",
+    "tags": ["fast", "weeknight"],
+    "servings": 4,
+    "total_minutes": 25,
+    "ingredients": [
+      { "measure": "1 lb", "item": "ground pork" },
+      { "measure": "12 oz", "item": "egg noodles" },
+      { "measure": "3 tbsp", "item": "fresh ginger, grated" },
+      { "measure": "4 cloves", "item": "garlic, minced" },
+      { "measure": "3 tbsp", "item": "soy sauce" },
+      { "measure": "2 tbsp", "item": "rice vinegar" },
+      { "measure": "1 tbsp", "item": "sesame oil" },
+      { "measure": "1 tbsp", "item": "chili flakes" },
+      { "measure": "4", "item": "green onions" },
+      { "measure": "1 head", "item": "bok choy" }
+    ],
+    "instructions": [
+      "Boil the noodles one minute short of the package time and drain, keeping a cup of the water.",
+      "Brown the pork hard in a dry wok over high heat, breaking it up, until it has crisp edges — about 6 minutes.",
+      "Add the ginger, garlic and chili flakes and stir 30 seconds.",
+      "Add the bok choy and cook until it collapses, 2 minutes.",
+      "Add the noodles, soy, vinegar, sesame oil and a splash of the noodle water. Toss hard until everything is glossy.",
+      "Green onions over the top."
+    ]
+  },
+  {
+    "title": "Overnight oats",
+    "description": "Made the night before, eaten out of the jar.",
+    "category": "breakfast",
+    "tags": ["make ahead", "no cook"],
+    "servings": 2,
+    "total_minutes": 10,
+    "ingredients": [
+      { "measure": "1 cup", "item": "rolled oats" },
+      { "measure": "1 cup", "item": "milk" },
+      { "measure": "1/2 cup", "item": "Greek yogurt" },
+      { "measure": "2 tbsp", "item": "maple syrup" },
+      { "measure": "1 tbsp", "item": "chia seeds" },
+      { "measure": "1 cup", "item": "berries" }
+    ],
+    "instructions": [
+      "Stir the oats, milk, yogurt, syrup and chia together in a jar.",
+      "Lid on, fridge overnight, at least 6 hours.",
+      "Berries on top in the morning."
+    ]
+  },
+  {
+    "title": "Yogurt, berries, granola",
+    "description": "Not really a recipe. Here so the week has something honest in the breakfast slot.",
+    "category": "breakfast",
+    "tags": ["no cook", "fast"],
+    "servings": 2,
+    "total_minutes": 5,
+    "ingredients": [
+      { "measure": "2 cups", "item": "Greek yogurt" },
+      { "measure": "1 cup", "item": "berries" },
+      { "measure": "1/2 cup", "item": "granola" },
+      { "measure": "2 tbsp", "item": "honey" }
+    ],
+    "instructions": ["Yogurt in bowls, berries on, granola over, honey across."]
+  },
+  {
+    "title": "Soft scrambled eggs on toast",
+    "description": "Low heat and patience. Six minutes of stirring beats two minutes of frying.",
+    "category": "breakfast",
+    "tags": ["fast"],
+    "servings": 2,
+    "total_minutes": 12,
+    "ingredients": [
+      { "measure": "6", "item": "eggs" },
+      { "measure": "2 tbsp", "item": "butter" },
+      { "measure": "2 tbsp", "item": "heavy cream" },
+      { "measure": "4 slices", "item": "sourdough bread" },
+      { "measure": "2", "item": "green onions" },
+      { "measure": "1 tsp", "item": "salt" }
+    ],
+    "instructions": [
+      "Beat the eggs with the cream and a good pinch of salt until completely uniform.",
+      "Melt the butter in a cold non-stick pan, add the eggs, and set the heat to low.",
+      "Stir constantly with a spatula, scraping the base, for 5 to 6 minutes. It will look like nothing is happening and then it will happen all at once.",
+      "Pull the pan off while they still look slightly too wet — they carry on cooking.",
+      "Onto toast, green onions over."
+    ]
+  },
+  {
+    "title": "Chicken salad, leftovers",
+    "description": "What to do with Monday's chicken on Tuesday.",
+    "category": "lunch",
+    "tags": ["leftovers", "no cook", "fast"],
+    "servings": 2,
+    "total_minutes": 10,
+    "ingredients": [
+      { "measure": "2 cups", "item": "cooked chicken, shredded" },
+      { "measure": "3 tbsp", "item": "mayonnaise" },
+      { "measure": "1 tbsp", "item": "dijon mustard" },
+      { "measure": "2 stalks", "item": "celery, diced" },
+      { "measure": "2", "item": "green onions" },
+      { "measure": "1", "item": "lemon" },
+      { "measure": "4 slices", "item": "sourdough bread" }
+    ],
+    "instructions": [
+      "Mix the mayo, mustard and the juice of half the lemon.",
+      "Fold in the chicken, celery and green onions. Season and taste — it usually wants more lemon.",
+      "Onto bread, or into lettuce cups if you had bread yesterday."
+    ]
+  },
+  {
+    "title": "White bean & kale soup",
+    "description": "Cheap, freezes well, and the parmesan rind is the whole trick.",
+    "cuisine": "Italian",
+    "category": "dinner",
+    "tags": ["vegetarian", "batch", "freezes"],
+    "servings": 6,
+    "total_minutes": 45,
+    "ingredients": [
+      { "measure": "2 cans", "item": "cannellini beans" },
+      { "measure": "1 bunch", "item": "kale" },
+      { "measure": "1", "item": "yellow onion, diced" },
+      { "measure": "2", "item": "carrots, diced" },
+      { "measure": "2 stalks", "item": "celery, diced" },
+      { "measure": "4 cloves", "item": "garlic" },
+      { "measure": "6 cups", "item": "vegetable stock" },
+      { "measure": "1 piece", "item": "parmesan rind" },
+      { "measure": "3 tbsp", "item": "olive oil" },
+      { "measure": "2", "item": "bay leaves" }
+    ],
+    "instructions": [
+      "Sweat the onion, carrot and celery in the oil over medium-low heat for 12 minutes, until soft and sweet with no colour.",
+      "Add the garlic, cook a minute, then the stock, beans, bay and the parmesan rind.",
+      "Simmer 20 minutes. Fish out the rind and bay.",
+      "Mash a cup of the beans against the side of the pot to thicken it.",
+      "Stir in the kale and cook 5 minutes more, until it is tender but still green."
+    ]
+  },
+  {
+    "title": "Roast broccoli with garlic and chili",
+    "description": "The only way anyone in this house eats broccoli willingly.",
+    "category": "side",
+    "tags": ["vegetarian", "fast", "one pan"],
+    "servings": 4,
+    "total_minutes": 25,
+    "oven_temp_f": 450,
+    "ingredients": [
+      { "measure": "2 heads", "item": "broccoli" },
+      { "measure": "4 cloves", "item": "garlic, sliced" },
+      { "measure": "3 tbsp", "item": "olive oil" },
+      { "measure": "1 tsp", "item": "chili flakes" },
+      { "measure": "1", "item": "lemon" },
+      { "measure": "1 tsp", "item": "salt" }
+    ],
+    "instructions": [
+      "Heat the oven to 450°F with the tray already inside.",
+      "Cut the broccoli into spears, keeping some flat sides — those are the bits that brown.",
+      "Toss with the oil, garlic, chili and salt.",
+      "Onto the hot tray, cut sides down, 18 to 20 minutes without stirring.",
+      "Lemon over as it comes out."
+    ]
+  },
+  {
+    "title": "Friday pizza dough",
+    "description": "Mix Thursday, bake Friday. A cold overnight rise is what makes it taste like a pizzeria.",
+    "cuisine": "Italian",
+    "category": "prep",
+    "tags": ["make ahead", "weekend"],
+    "servings": 3,
+    "total_minutes": 150,
+    "oven_temp_f": 550,
+    "ingredients": [
+      { "measure": "500 g", "item": "bread flour" },
+      { "measure": "325 ml", "item": "water" },
+      { "measure": "10 g", "item": "salt" },
+      { "measure": "2 g", "item": "instant yeast" },
+      { "measure": "1 tbsp", "item": "olive oil" }
+    ],
+    "instructions": [
+      "Mix the flour and water with your hand until no dry flour is left. Leave it 30 minutes, covered.",
+      "Add the salt and yeast and squeeze the dough through your fingers until it is smooth, 3 or 4 minutes.",
+      "Fold it over on itself four times, every 30 minutes, for 2 hours.",
+      "Divide into three balls, oil them lightly, and refrigerate overnight — up to 3 days is better, not worse.",
+      "Take them out 2 hours before you bake. Oven as hot as it goes, with a stone or steel in it for 45 minutes.",
+      "Stretch by hand, top sparingly, bake 6 to 8 minutes until the crust blisters."
+    ]
+  },
+  {
+    "title": "Sunday batch: rice, roast veg, jammy eggs",
+    "description": "Ninety minutes on Sunday afternoon buys you three lunches.",
+    "category": "prep",
+    "tags": ["batch", "make ahead", "vegetarian"],
+    "servings": 6,
+    "total_minutes": 90,
+    "oven_temp_f": 425,
+    "ingredients": [
+      { "measure": "3 cups", "item": "brown rice" },
+      { "measure": "2", "item": "sweet potatoes, cubed" },
+      { "measure": "1 head", "item": "cauliflower" },
+      { "measure": "2", "item": "red onions, wedged" },
+      { "measure": "6", "item": "eggs" },
+      { "measure": "1/4 cup", "item": "olive oil" },
+      { "measure": "2 tsp", "item": "cumin" },
+      { "measure": "2 tsp", "item": "paprika" },
+      { "measure": "1 cup", "item": "Greek yogurt" },
+      { "measure": "1", "item": "lemon" }
+    ],
+    "instructions": [
+      "Oven to 425°F. Rice on, timer set.",
+      "Toss the sweet potato, cauliflower and onion with the oil, cumin and paprika across two trays — crowd them and they steam.",
+      "Roast 35 to 40 minutes, swapping the trays halfway.",
+      "Eggs into boiling water for exactly 7 minutes, then straight into cold water. Peel once cool.",
+      "Thin the yogurt with lemon juice and a splash of water to make a sauce.",
+      "Pack rice, veg and sauce into three containers. Keep the eggs whole in their shells and peel them when you eat."
+    ]
+  },
+  {
+    "title": "Pasta with tomato and butter",
+    "description": "Four ingredients and forty-five minutes of ignoring it. The onion is discarded, and it matters.",
+    "cuisine": "Italian",
+    "category": "dinner",
+    "tags": ["vegetarian", "pantry"],
+    "servings": 4,
+    "total_minutes": 55,
+    "ingredients": [
+      { "measure": "1 can", "item": "canned tomatoes" },
+      { "measure": "5 tbsp", "item": "butter" },
+      { "measure": "1", "item": "yellow onion, halved" },
+      { "measure": "1 lb", "item": "pasta" },
+      { "measure": "2 tsp", "item": "salt" },
+      { "measure": "2 oz", "item": "parmesan" }
+    ],
+    "instructions": [
+      "Put the tomatoes, butter and the halved onion in a saucepan with a good pinch of salt.",
+      "Simmer uncovered on low for 45 minutes, crushing the tomatoes against the side occasionally. It will go from watery to velvety.",
+      "Take out the onion halves. Eat them standing at the counter, or don't.",
+      "Boil the pasta in well-salted water and drain it a minute early.",
+      "Finish the pasta in the sauce with a splash of pasta water, then parmesan."
+    ]
+  },
+  {
+    "title": "Black bean tacos",
+    "description": "Fifteen minutes from cupboard to table on a night nobody wants to cook.",
+    "cuisine": "Mexican",
+    "category": "dinner",
+    "tags": ["vegetarian", "pantry", "fast"],
+    "servings": 4,
+    "total_minutes": 20,
+    "ingredients": [
+      { "measure": "2 cans", "item": "black beans" },
+      { "measure": "12", "item": "corn tortillas" },
+      { "measure": "1", "item": "yellow onion, diced" },
+      { "measure": "2 tsp", "item": "cumin" },
+      { "measure": "1 tsp", "item": "chili powder" },
+      { "measure": "1", "item": "lime" },
+      { "measure": "1", "item": "avocado" },
+      { "measure": "1 bunch", "item": "cilantro" },
+      { "measure": "4 oz", "item": "feta" },
+      { "measure": "2 tbsp", "item": "vegetable oil" }
+    ],
+    "instructions": [
+      "Cook the onion in the oil until soft, 5 minutes. Add the cumin and chili powder for 30 seconds.",
+      "Add the beans with half their liquid and mash about a third of them. Simmer 5 minutes until thick.",
+      "Char the tortillas directly over a gas flame or in a dry pan, 20 seconds a side.",
+      "Beans, avocado, feta, cilantro, a hard squeeze of lime."
+    ]
+  },
+  {
+    "title": "Braised chicken thighs with olives",
+    "description": "Brown, then leave alone. Everything good about a Sunday dinner on a Tuesday budget.",
+    "cuisine": "Mediterranean",
+    "category": "dinner",
+    "tags": ["one pan", "braise"],
+    "servings": 4,
+    "total_minutes": 70,
+    "oven_temp_f": 350,
+    "ingredients": [
+      { "measure": "8", "item": "bone-in chicken thighs" },
+      { "measure": "2", "item": "yellow onions, sliced" },
+      { "measure": "1 cup", "item": "green olives" },
+      { "measure": "4 cloves", "item": "garlic" },
+      { "measure": "1 cup", "item": "chicken stock" },
+      { "measure": "1", "item": "lemon" },
+      { "measure": "2 tbsp", "item": "olive oil" },
+      { "measure": "2 sprigs", "item": "thyme" },
+      { "measure": "1 tsp", "item": "salt" }
+    ],
+    "instructions": [
+      "Oven to 350°F. Season the thighs hard and leave them 15 minutes.",
+      "Brown them skin-down in the oil in a heavy oven-proof pan, 8 minutes without moving them. Set aside.",
+      "Cook the onions in the fat until golden, 10 minutes, then add the garlic and thyme.",
+      "Add the stock, olives and lemon cut into wedges. Return the thighs skin-up, so the skin sits above the liquid.",
+      "Into the oven uncovered for 40 minutes. The skin should stay crisp while everything underneath goes soft."
+    ]
+  },
+  {
+    "title": "Fried rice, whatever's in the fridge",
+    "description": "Cold rice is not optional. Fresh rice makes porridge.",
+    "cuisine": "Chinese",
+    "category": "dinner",
+    "tags": ["leftovers", "fast", "pantry"],
+    "servings": 4,
+    "total_minutes": 20,
+    "ingredients": [
+      { "measure": "4 cups", "item": "cooked rice, cold" },
+      { "measure": "3", "item": "eggs, beaten" },
+      { "measure": "2 cups", "item": "frozen peas" },
+      { "measure": "3", "item": "carrots, diced" },
+      { "measure": "4", "item": "green onions" },
+      { "measure": "3 tbsp", "item": "soy sauce" },
+      { "measure": "1 tbsp", "item": "sesame oil" },
+      { "measure": "3 tbsp", "item": "vegetable oil" },
+      { "measure": "2 cloves", "item": "garlic" }
+    ],
+    "instructions": [
+      "Get the wok properly hot — hotter than feels sensible.",
+      "Scramble the eggs in half the oil, break them up, and take them out.",
+      "Rest of the oil, then the carrots for 2 minutes, garlic for 30 seconds, peas for 1 minute.",
+      "Rice in. Press it flat against the pan and leave it 60 seconds at a time to get crisp bits, three times over.",
+      "Eggs back in, soy and sesame around the edge of the pan, green onions, and off the heat."
+    ]
+  },
+  {
+    "title": "Roast salmon with dill yogurt",
+    "description": "Twelve minutes in a hot oven. Hard to overcook if you pull it early.",
+    "category": "dinner",
+    "tags": ["fast", "weeknight"],
+    "servings": 4,
+    "total_minutes": 25,
+    "oven_temp_f": 425,
+    "ingredients": [
+      { "measure": "4", "item": "salmon fillets" },
+      { "measure": "1 cup", "item": "Greek yogurt" },
+      { "measure": "1 bunch", "item": "dill" },
+      { "measure": "1", "item": "lemon" },
+      { "measure": "1", "item": "cucumber" },
+      { "measure": "2 tbsp", "item": "olive oil" },
+      { "measure": "1 clove", "item": "garlic" },
+      { "measure": "1 tsp", "item": "salt" }
+    ],
+    "instructions": [
+      "Oven to 425°F. Salmon on a lined tray, oiled and salted.",
+      "Roast 10 to 12 minutes depending on thickness. Pull it when the centre is still slightly translucent.",
+      "Grate the garlic into the yogurt with most of the dill, the zest and juice of the lemon, and salt.",
+      "Dice the cucumber and stir it through.",
+      "Salmon on plates, sauce alongside, the rest of the dill over."
+    ]
+  }
+]
