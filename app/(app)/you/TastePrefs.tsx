@@ -14,17 +14,21 @@ const DIETS: DietFlag[] = [
 export default function TastePrefs({
   dietTags,
   avoid,
+  dislikes,
   weeknightMax,
 }: {
   dietTags: string[];
   avoid: string[];
+  dislikes: string[];
   weeknightMax: number;
 }) {
   const router = useRouter();
   const [diets, setDiets] = useState(new Set(dietTags));
   const [banned, setBanned] = useState(avoid);
+  const [disliked, setDisliked] = useState(dislikes);
   const [minutes, setMinutes] = useState(weeknightMax);
   const [draft, setDraft] = useState("");
+  const [dislikeDraft, setDislikeDraft] = useState("");
   const [, startTransition] = useTransition();
 
   function save(patch: Parameters<typeof updateProfile>[0]) {
@@ -55,6 +59,21 @@ export default function TastePrefs({
     const next = banned.filter((entry) => entry !== item);
     setBanned(next);
     save({ avoidIngredients: next });
+  }
+
+  function addDislike() {
+    const value = dislikeDraft.trim();
+    if (!value) return;
+    const next = [...disliked, value];
+    setDisliked(next);
+    setDislikeDraft("");
+    save({ dislikedIngredients: next });
+  }
+
+  function removeDislike(item: string) {
+    const next = disliked.filter((entry) => entry !== item);
+    setDisliked(next);
+    save({ dislikedIngredients: next });
   }
 
   function shiftMinutes(delta: number) {
@@ -113,6 +132,31 @@ export default function TastePrefs({
           className="w-[110px] text-[13.5px]"
         />
       </div>
+
+      <Heading color="var(--rule-strong)">Rather not</Heading>
+      <div className="-mt-3 flex flex-wrap items-center gap-x-[18px] gap-y-3">
+        {disliked.map((item) => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => removeDislike(item)}
+            className="text-[13.5px] text-ink-soft"
+          >
+            {item} <span className="text-ink-faint">×</span>
+          </button>
+        ))}
+        <input
+          value={dislikeDraft}
+          onChange={(event) => setDislikeDraft(event.target.value)}
+          onKeyDown={(event) => event.key === "Enter" && addDislike()}
+          onBlur={addDislike}
+          placeholder="+ add one"
+          className="w-[110px] text-[13.5px]"
+        />
+      </div>
+      <p className="-mt-3 text-[12.5px] text-ink-faint">
+        These still turn up if a recipe is good enough — they just come up a lot less.
+      </p>
 
       <Heading>On a weeknight</Heading>
       <div className="-mt-3 flex items-center justify-between gap-3">

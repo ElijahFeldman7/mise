@@ -124,6 +124,7 @@ export async function updateProfile(patch: {
   displayName?: string;
   dietTags?: string[];
   avoidIngredients?: string[];
+  dislikedIngredients?: string[];
   likedCuisines?: string[];
   weeknightMaxMinutes?: number;
 }) {
@@ -137,6 +138,9 @@ export async function updateProfile(patch: {
       ...(patch.dietTags !== undefined ? { diet_tags: patch.dietTags } : {}),
       ...(patch.avoidIngredients !== undefined
         ? { avoid_ingredients: patch.avoidIngredients.map((item) => itemKey(item)) }
+        : {}),
+      ...(patch.dislikedIngredients !== undefined
+        ? { disliked_ingredients: patch.dislikedIngredients.map((item) => itemKey(item)) }
         : {}),
       ...(patch.likedCuisines !== undefined ? { liked_cuisines: patch.likedCuisines } : {}),
       ...(patch.weeknightMaxMinutes !== undefined

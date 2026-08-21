@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
         slot: "Dinner",
         dietTags: house.dietTags,
         avoidIngredients: house.avoid,
+        dislikedIngredients: house.dislike,
         weeknightMaxMinutes: session.profile.weeknight_max_minutes ?? 45,
       },
       1,

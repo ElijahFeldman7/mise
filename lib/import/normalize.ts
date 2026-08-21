@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { dietFlagsFor, parseIngredientLine, type ParsedIngredient } from "@/lib/ingredients";
+import { normalizeCuisine } from "@/lib/cuisines";
 import type { RawRecipe } from "./extract";
 
 export type RecipeDraft = {
@@ -157,7 +158,7 @@ export function normalizeRecipe(raw: RawRecipe, pageUrl: string): RecipeDraft | 
     yieldText,
     totalMinutes: totalMinutes && totalMinutes < 2880 ? totalMinutes : null,
     ovenTempF: ovenTempF(instructions.join(" ")),
-    cuisine: raw.cuisine?.slice(0, 40) ?? null,
+    cuisine: normalizeCuisine(raw.cuisine),
     category: categoryFrom(raw.category, raw.keywords),
     tags: raw.keywords,
     dietFlags: dietFlagsFor(keys),

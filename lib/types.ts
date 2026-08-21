@@ -20,6 +20,7 @@ export type Profile = {
   active_household_id: string | null;
   diet_tags: string[];
   avoid_ingredients: string[];
+  disliked_ingredients: string[];
   liked_cuisines: string[];
   weeknight_max_minutes: number;
   created_at: string;
@@ -244,6 +245,7 @@ export type Database = {
     Functions: {
       join_household: { Args: { code: string }; Returns: string };
       is_admin: { Args: Record<string, never>; Returns: boolean };
+      cuisine_counts: { Args: Record<string, never>; Returns: Array<{ cuisine: string; n: number }> };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

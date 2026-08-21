@@ -41,6 +41,8 @@ export type Context = {
   slot: string;
   dietTags: DietFlag[];
   avoidIngredients: string[];
+  /** Not banned — just pushed down the list. */
+  dislikedIngredients: string[];
   weeknightMaxMinutes: number;
 };
 
@@ -211,6 +213,29 @@ export function passesFilters(candidate: Candidate, context: Context): boolean {
   return slotAllows(candidate, context.slot);
 }
 
+/**
+ * Disliking something isn't banning it. Each disliked ingredient multiplies the
+ * score down, so one mushroom in a long list costs a little and a mushroom
+ * risotto — where the word is in the name — costs a lot. Nothing is ever hidden
+ * outright; that's what "never suggest" is for.
+ */
+function dislikePenalty(candidate: Candidate, disliked: Set<string>): number {
+  if (disliked.size === 0) return 1;
+
+  let hits = 0;
+  let named = false;
+  const title = candidate.title.toLowerCase();
+
+  for (const key of candidate.ingredient_keys) {
+    if (!disliked.has(key)) continue;
+    hits += 1;
+    if (key.length > 3 && title.includes(key)) named = true;
+  }
+
+  if (hits === 0) return 1;
+  return Math.pow(0.62, hits) * (named ? 0.6 : 1);
+}
+
 function overlapScore(candidate: Candidate, context: Context): { score: number; have: number; need: number } {
   const needed = candidate.ingredient_keys.filter((key) => !isStaple(key));
   if (needed.length === 0) return { score: 0.5, have: 0, need: 0 };
@@ -327,6 +352,7 @@ export function recommend(
   };
 
   const weekSeed = `${context.date.getFullYear()}-${weekOfYear(context.date)}`;
+  const disliked = new Set(context.dislikedIngredients);
   const scored: Scored[] = [];
 
   for (const candidate of candidates) {
@@ -356,6 +382,9 @@ export function recommend(
       parts.season * weights.season +
       parts.novelty * weights.novelty;
 
+    const dislike = dislikePenalty(candidate, disliked);
+    score *= dislike;
+
     if (signal.skipped.has(candidate.id)) score *= 0.75;
 
     score += jitter(candidate.id, weekSeed) * 0.02;
@@ -363,7 +392,7 @@ export function recommend(
     scored.push({
       candidate,
       score,
-      parts,
+      parts: { ...parts, dislike },
       reason: explain(candidate, { overlap, taste, variety, effort, season, novelty }, signal),
     });
   }

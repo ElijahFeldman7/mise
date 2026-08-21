@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
       slot,
       dietTags: house.dietTags,
       avoidIngredients: house.avoid,
+      dislikedIngredients: house.dislike,
       weeknightMaxMinutes: session.profile.weeknight_max_minutes ?? 45,
     },
     limit,

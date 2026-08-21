@@ -52,6 +52,7 @@ export default async function YouPage() {
         <TastePrefs
           dietTags={session.profile.diet_tags ?? []}
           avoid={session.profile.avoid_ingredients ?? []}
+          dislikes={session.profile.disliked_ingredients ?? []}
           weeknightMax={session.profile.weeknight_max_minutes ?? 45}
         />
 

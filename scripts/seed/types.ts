@@ -10,6 +10,7 @@ export type SeedRecipe = {
   cuisine?: string | null;
   category?: string | null;
   tags?: string[];
+  effort?: number | null;
   ingredientLines: string[];
   instructions: string[];
 };

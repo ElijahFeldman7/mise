@@ -27,12 +27,14 @@ export default async function RecipesPage({
     slot?: string;
     time?: string;
     all?: string;
+    c?: string;
   }>;
 }) {
-  const { q, f, pick, slot, time, all } = await searchParams;
+  const { q, f, pick, slot, time, all, c } = await searchParams;
   const session = await requireSession();
   const supabase = await createClient();
 
+  const term = (q ?? "").replace(/[,()*%{}\\.:]/g, " ").trim().slice(0, 60);
   const house = await householdDiet(session.household.id);
   const filtering = !all && (house.dietTags.length > 0 || house.avoid.length > 0);
 
@@ -46,12 +48,28 @@ export default async function RecipesPage({
 
   if (filtering && house.dietTags.length) query = query.contains("diet_flags", house.dietTags);
 
-  if (q) query = query.ilike("title", `%${q}%`);
+  if (term) {
+    query = query.or(
+      [
+        `title.ilike.%${term}%`,
+        `cuisine.ilike.%${term}%`,
+        `tags.cs.{${term.toLowerCase()}}`,
+      ].join(","),
+    );
+  }
+  if (c) query = query.ilike("cuisine", c);
   if (f === "quick") query = query.lte("total_minutes", 30);
   if (f === "veg") query = query.contains("diet_flags", ["vegetarian"]);
   if (f === "mine") query = query.eq("household_id", session.household.id);
 
-  const { data: found } = await query.order("title");
+  const [{ data: found }, { data: cuisineRows }] = await Promise.all([
+    query.order("title"),
+    supabase.rpc("cuisine_counts"),
+  ]);
+
+  const cuisines = ((cuisineRows ?? []) as Array<{ cuisine: string; n: number }>)
+    .filter((row) => row.n >= 2 || row.cuisine === c)
+    .slice(0, 24);
 
   // Banned ingredients need the ingredient rows, so that part is sifted here.
   const banned = new Set(house.avoid.map((item) => itemKey(item)));
@@ -89,6 +107,7 @@ export default async function RecipesPage({
             const active = (f ?? "all") === filter.key;
             const params = new URLSearchParams();
             if (q) params.set("q", q);
+            if (c) params.set("c", c);
             if (filter.key !== "all") params.set("f", filter.key);
             if (pick) {
               params.set("pick", pick);
@@ -117,7 +136,44 @@ export default async function RecipesPage({
           })}
         </div>
 
-        {!q && !f ? (
+        {cuisines.length ? (
+          <div className="-mt-1 flex gap-[18px] overflow-x-auto">
+            {[{ cuisine: "", n: 0 }, ...cuisines].map((row) => {
+              const active = (c ?? "") === row.cuisine;
+              const params = new URLSearchParams();
+              if (q) params.set("q", q);
+              if (f) params.set("f", f);
+              if (all) params.set("all", all);
+              if (row.cuisine) params.set("c", row.cuisine);
+              if (pick) {
+                params.set("pick", pick);
+                if (slot) params.set("slot", slot);
+                if (time) params.set("time", time);
+              }
+              return (
+                <Link
+                  key={row.cuisine || "any"}
+                  href={`/recipes?${params.toString()}`}
+                  className="flex-shrink-0 whitespace-nowrap text-[13px]"
+                  style={
+                    active
+                      ? {
+                          color: "var(--accent)",
+                          fontWeight: 600,
+                          borderBottom: "2px solid var(--accent)",
+                          paddingBottom: 3,
+                        }
+                      : { color: "var(--ink-faint)" }
+                  }
+                >
+                  {row.cuisine || "Any cuisine"}
+                </Link>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {!q && !f && !c ? (
           <>
             <Heading>Picked for your week</Heading>
             <PickedForYou pick={pick ?? null} slot={slot ?? "Dinner"} time={time ?? null} />
@@ -125,7 +181,15 @@ export default async function RecipesPage({
         ) : null}
 
         <div className="flex items-baseline justify-between">
-          <Heading>{q ? "Matches" : filtering ? dietSentence(house.dietTags, DIET_LABEL) || "Everything" : "Everything"}</Heading>
+          <Heading>
+            {q
+              ? "Matches"
+              : c
+                ? c
+                : filtering
+                  ? dietSentence(house.dietTags, DIET_LABEL) || "Everything"
+                  : "Everything"}
+          </Heading>
           <span className="text-xs text-ink-faint">{recipes.length}</span>
         </div>
 
@@ -134,6 +198,7 @@ export default async function RecipesPage({
             href={`/recipes?${new URLSearchParams({
               ...(q ? { q } : {}),
               ...(f ? { f } : {}),
+              ...(c ? { c } : {}),
               all: "1",
             }).toString()}`}
             className="-mt-3 text-[12.5px] text-ink-faint"
@@ -142,7 +207,11 @@ export default async function RecipesPage({
           </Link>
         ) : all ? (
           <Link
-            href={`/recipes?${new URLSearchParams({ ...(q ? { q } : {}), ...(f ? { f } : {}) }).toString()}`}
+            href={`/recipes?${new URLSearchParams({
+              ...(q ? { q } : {}),
+              ...(f ? { f } : {}),
+              ...(c ? { c } : {}),
+            }).toString()}`}
             className="-mt-3 text-[12.5px] text-accent"
           >
             showing everything — back to what the house eats

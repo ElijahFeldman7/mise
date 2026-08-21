@@ -21,11 +21,15 @@ there is no service-role key sitting in the running application.
 
 ## The schema
 
-`0001_init.sql` is already applied. **`0002_import_pantry_receipts.sql` and
-`0003_portions_and_diet.sql` are not** — run them in the Supabase SQL editor, in
-order, before using anything below. Between them they add the cupboard's three
-states, package sizes on ingredients, receipt totals, the import audit table,
-and the household's headcount.
+`0001_init.sql` is already applied. **`0002` through `0005` are not** — run them
+in the Supabase SQL editor, in order, before using anything below:
+
+| | |
+| --- | --- |
+| `0002_import_pantry_receipts.sql` | the cupboard's three states, package sizes, receipt totals, the import audit table |
+| `0003_portions_and_diet.sql` | the household's headcount |
+| `0004_cuisine.sql` | the cuisine index and count function — and it renames "France" to "French" in the rows already there |
+| `0005_dislikes.sql` | things you'd rather not eat |
 
 ## Filling the recipe library
 
@@ -155,6 +159,25 @@ makes the house vegetarian for browsing and for recommendations. Banned
 ingredients are sifted on `item_key`, so "no coriander" also catches "finely
 chopped fresh cilantro". There's one quiet line under the heading to see
 everything anyway — filtering is a default, never a cage.
+
+**Cuisine is an adjective, and normalised on the way in.** TheMealDB names
+places — "France", "United States" — sitting next to "Spanish" and "British",
+which makes for a filter row that reads like a customs queue.
+`lib/cuisines.ts` folds both forms into one, and every source runs through it.
+Wikibooks publishes no cuisine field at all, so the seeder reads it out of the
+page's categories instead: `Category:Thai recipes` next to `Category:Easy
+recipes` means knowing which words are nationalities, which is what that file's
+list is for. It also picks up the course and the difficulty the same way, which
+beats guessing either from the title. Searching reaches titles, cuisines and
+tags together, so "thai" finds Pad See Ew.
+
+**Never suggest, and rather not.** Two lists on `/you`, and the difference
+matters. "Never suggest" is a hard filter — a recipe with it in never appears.
+"Rather not" multiplies the score down: 0.62 for each disliked ingredient, and
+0.6 again if the word is in the title, so a mushroom risotto falls a long way
+and a stew with one mushroom in it falls a little. Both lists are stored as
+`item_key`s and unioned across the household, so one person's "no coriander"
+also catches everyone's "finely chopped fresh cilantro".
 
 **Receipts never leave the phone.** Tesseract runs in a web worker on the
 device. Only the extracted text and the matches you confirm reach the database.

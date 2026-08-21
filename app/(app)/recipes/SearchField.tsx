@@ -33,7 +33,7 @@ export default function SearchField({ initial }: { initial: string }) {
       <input
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        placeholder="Search recipes, or paste a link"
+        placeholder="A dish, a cuisine, or paste a link"
         className="field text-[14.5px]"
         type="search"
         autoCapitalize="off"

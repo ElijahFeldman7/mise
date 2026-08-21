@@ -1,15 +1,24 @@
 import { getJson, pause } from "../cache";
+import { courseFromCategories, cuisineFromCategories, effortFromCategories } from "../cuisines";
 import type { SeedRecipe, SeedSource } from "../types";
 
 const API = "https://en.wikibooks.org/w/api.php";
-const BATCH = 40;
+const BATCH = 20;
 
-type Page = { pageid: number; title: string; revisions?: Array<{ slots: { main: { content: string } } }> };
+type Page = {
+  pageid: number;
+  title: string;
+  revisions?: Array<{ slots: { main: { content: string } } }>;
+  categories?: Array<{ title: string }>;
+};
+
 type Answer = {
-  batchcomplete?: unknown;
-  continue?: { gcmcontinue?: string; continue?: string };
+  batchcomplete?: boolean;
+  continue?: Record<string, string>;
   query?: { pages?: Page[] };
 };
+
+type Gathered = { pageid: number; title: string; wikitext: string; categories: string[] };
 
 /** Wikitext into something a person wrote: links unwrapped, templates flattened. */
 export function cleanWikitext(text: string): string {
@@ -71,62 +80,112 @@ const CATEGORY_WORDS: Array<[RegExp, string]> = [
   [/drink|beverage|cocktail|\btea\b|coffee|smoothie|juice/i, "drink"],
 ];
 
+/**
+ * MediaWiki continues the innermost query first: a page with more categories
+ * than fit comes back in pieces, and only `batchcomplete` says the batch is
+ * whole. Yielding before then would mean half a category list, and a Thai curry
+ * filed as no cuisine at all.
+ */
+async function* batches(): AsyncGenerator<Gathered[]> {
+  let carry: Record<string, string> = {};
+  let gathered = new Map<number, Gathered>();
+
+  for (;;) {
+    const params = new URLSearchParams({
+      action: "query",
+      format: "json",
+      formatversion: "2",
+      generator: "categorymembers",
+      gcmtitle: "Category:Recipes",
+      gcmnamespace: "102",
+      gcmlimit: String(BATCH),
+      prop: "revisions|categories",
+      rvprop: "content",
+      rvslots: "main",
+      cllimit: "max",
+      ...carry,
+    });
+
+    const answer = await getJson<Answer>(`${API}?${params.toString()}`);
+    await pause(800);
+
+    for (const page of answer.query?.pages ?? []) {
+      const existing = gathered.get(page.pageid);
+      const categories = (page.categories ?? []).map((row) => row.title);
+
+      if (existing) {
+        existing.categories.push(...categories);
+        continue;
+      }
+
+      gathered.set(page.pageid, {
+        pageid: page.pageid,
+        title: page.title,
+        wikitext: page.revisions?.[0]?.slots?.main?.content ?? "",
+        categories,
+      });
+    }
+
+    if (answer.batchcomplete) {
+      yield [...gathered.values()];
+      gathered = new Map();
+
+      const next = answer.continue?.gcmcontinue;
+      if (!next) return;
+      carry = { gcmcontinue: next };
+      continue;
+    }
+
+    if (!answer.continue) return;
+    carry = { ...answer.continue };
+  }
+}
+
 export const wikibooks: SeedSource = {
   name: "wikibooks",
   label: "Wikibooks Cookbook",
   license: "CC BY-SA 3.0 — every recipe keeps a link back to its page",
 
   async *list({ limit }) {
-    let cursor: string | undefined;
     let sent = 0;
 
-    do {
-      const params = new URLSearchParams({
-        action: "query",
-        format: "json",
-        formatversion: "2",
-        generator: "categorymembers",
-        gcmtitle: "Category:Recipes",
-        gcmnamespace: "102",
-        gcmlimit: String(BATCH),
-        prop: "revisions",
-        rvprop: "content",
-        rvslots: "main",
-      });
-      if (cursor) params.set("gcmcontinue", cursor);
+    for await (const pages of batches()) {
+      for (const page of pages) {
+        if (!page.wikitext) continue;
 
-      const answer = await getJson<Answer>(`${API}?${params.toString()}`);
-      await pause(800);
-
-      for (const page of answer.query?.pages ?? []) {
-        const wikitext = page.revisions?.[0]?.slots?.main?.content;
-        if (!wikitext) continue;
-
-        const ingredientLines = section(wikitext, ["Ingredients", "Ingredient"]);
-        const instructions = section(wikitext, [
+        const ingredientLines = section(page.wikitext, ["Ingredients", "Ingredient"]);
+        const instructions = section(page.wikitext, [
           "Procedure", "Directions", "Method", "Preparation", "Instructions", "Steps",
         ]);
         if (!ingredientLines.length || !instructions.length) continue;
 
         const title = page.title.replace(/^Cookbook:\s*/, "").trim();
-        const categoryHint = summaryField(wikitext, "category") ?? "";
+        const { cuisine, also } = cuisineFromCategories(page.categories);
+        const summaryCategory = summaryField(page.wikitext, "category") ?? "";
+
         const category =
-          CATEGORY_WORDS.find(([pattern]) => pattern.test(`${categoryHint} ${title}`))?.[1] ??
+          courseFromCategories(page.categories) ??
+          CATEGORY_WORDS.find(([pattern]) => pattern.test(`${summaryCategory} ${title}`))?.[1] ??
           "dinner";
 
-        const time = summaryField(wikitext, "time");
+        const time = summaryField(page.wikitext, "time");
         const minutes = time?.match(/(\d+)\s*(hour|hr|minute|min)/i);
 
         yield {
           sourceId: String(page.pageid),
           title,
           sourceUrl: `https://en.wikibooks.org/wiki/${encodeURIComponent(page.title)}`,
-          servingsText: summaryField(wikitext, "servings"),
+          servingsText: summaryField(page.wikitext, "servings"),
           totalMinutes: minutes
             ? Number(minutes[1]) * (/hour|hr/i.test(minutes[2]) ? 60 : 1)
             : null,
+          cuisine,
           category,
-          tags: categoryHint ? [categoryHint.toLowerCase().replace(/ recipes?$/, "")] : [],
+          effort: effortFromCategories(page.categories),
+          tags: [
+            ...also.map((name) => name.toLowerCase()),
+            ...(summaryCategory ? [summaryCategory.toLowerCase().replace(/ recipes?$/, "")] : []),
+          ],
           ingredientLines,
           instructions,
         } satisfies SeedRecipe;
@@ -134,8 +193,6 @@ export const wikibooks: SeedSource = {
         sent += 1;
         if (limit && sent >= limit) return;
       }
-
-      cursor = answer.continue?.gcmcontinue;
-    } while (cursor);
+    }
   },
 };

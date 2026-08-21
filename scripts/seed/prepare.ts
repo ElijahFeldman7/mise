@@ -1,5 +1,6 @@
 import { dietFlagsFor, parseIngredientLine } from "../../lib/ingredients";
 import { fingerprintOf, ovenTempF, parseServings } from "../../lib/import/normalize";
+import { normalizeCuisine } from "../../lib/cuisines";
 import type { SeedRecipe } from "./types";
 
 export type Prepared = {
@@ -91,11 +92,11 @@ export function prepare(source: string, entry: SeedRecipe): Prepared | Reject {
       servings,
       yield_text: yieldText,
       oven_temp_f: ovenTempF(instructions.join(" ")),
-      cuisine: entry.cuisine ?? null,
+      cuisine: normalizeCuisine(entry.cuisine),
       category: entry.category ?? "dinner",
       tags: (entry.tags ?? []).slice(0, 12),
       diet_flags: dietFlagsFor(keys),
-      effort: effortFrom(minutes, instructions.length, parsed.length),
+      effort: entry.effort ?? effortFrom(minutes, instructions.length, parsed.length),
       fingerprint,
       is_public: true,
       updated_at: new Date().toISOString(),
