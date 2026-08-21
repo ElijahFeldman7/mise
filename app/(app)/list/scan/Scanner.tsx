@@ -37,7 +37,6 @@ export default function Scanner({ targets }: { targets: MatchTarget[] }) {
     try {
       const prepared = await prepareReceiptImage(file);
 
-      // Tesseract runs in a worker on this device. The photo is never uploaded.
       const { createWorker } = await import("tesseract.js");
       const worker = await createWorker("eng", 1, {
         logger: (message: { status: string; progress: number }) => {
@@ -96,8 +95,6 @@ export default function Scanner({ targets }: { targets: MatchTarget[] }) {
       router.refresh();
     });
   }
-
-  // -------------------------------------------------------------------------
 
   if (stage === "idle" || stage === "reading") {
     return (

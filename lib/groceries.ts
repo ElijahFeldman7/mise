@@ -1,12 +1,3 @@
-/**
- * Turning a week's plan into a shopping list.
- *
- * Every planned meal contributes its ingredients, scaled to the number of
- * people actually eating. Ingredients that name the same thing collapse onto
- * one line with their amounts added up. Staples and anything the household
- * keeps in the pantry never make the list at all.
- */
-
 import { isStaple, type Aisle } from "./ingredients";
 import { mergeAmounts, scaleAmount } from "./units";
 import type { PlanEntry, RecipeIngredient } from "./types";
@@ -59,7 +50,6 @@ export function buildGroceryRows(
       if (ingredient.optional) continue;
 
       const bucket = buckets.get(key) ?? {
-        // Keep the shortest name we've seen — usually the plainest one.
         item: ingredient.item,
         aisle: ingredient.aisle,
         amounts: [],
@@ -99,13 +89,6 @@ export function buildGroceryRows(
   return rows.map((row, index) => ({ ...row, position: index }));
 }
 
-/**
- * What to change in the database so the stored list matches the plan.
- *
- * Only plan-sourced rows are touched. Hand-added rows stay, and a row that has
- * already been ticked off is never removed or un-ticked — you bought the thing,
- * editing the plan afterwards should not un-buy it.
- */
 export function diffGroceryRows(
   desired: GroceryRow[],
   existing: Array<{
@@ -135,7 +118,7 @@ export function diffGroceryRows(
 
   for (const row of desired) {
     seen.add(row.item_key);
-    if (manualKeys.has(row.item_key)) continue; // somebody already wrote it in
+    if (manualKeys.has(row.item_key)) continue;
 
     const current = existingByKey.get(row.item_key);
     if (!current) {

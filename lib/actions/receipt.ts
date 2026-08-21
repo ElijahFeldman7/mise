@@ -14,10 +14,6 @@ export type ReceiptDecision = {
   accepted: boolean;
 };
 
-/**
- * Save a scanned receipt and tick off everything the shopper confirmed.
- * The photo itself is optional and never required — the text is what matters.
- */
 function statusFor(decision: ReceiptDecision): ReceiptLine["status"] {
   if (!decision.itemId) return "unmatched";
   if (!decision.accepted) return "rejected";

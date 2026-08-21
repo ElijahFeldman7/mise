@@ -1,11 +1,5 @@
 "use client";
 
-/**
- * Photos are taken on a phone and are enormous. Nothing leaves the device
- * until it has been redrawn onto a canvas at a sane size — a 12 MP camera
- * frame becomes roughly 150–300 KB, which is what actually gets uploaded.
- */
-
 export type CompressedImage = {
   blob: Blob;
   width: number;
@@ -52,10 +46,6 @@ export async function compressImage(
   };
 }
 
-/**
- * A receipt wants the opposite treatment from a dish photo: keep it big and
- * push it to hard black and white, which is what Tesseract reads best.
- */
 export async function prepareReceiptImage(file: File | Blob): Promise<Blob> {
   const bitmap = await loadBitmap(file);
 
@@ -75,7 +65,6 @@ export async function prepareReceiptImage(file: File | Blob): Promise<Blob> {
   const image = context.getImageData(0, 0, width, height);
   const pixels = image.data;
 
-  // Greyscale first, and find the mean so the threshold suits the lighting.
   let sum = 0;
   for (let i = 0; i < pixels.length; i += 4) {
     const grey = 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
@@ -105,7 +94,6 @@ async function loadBitmap(file: File | Blob): Promise<ImageBitmap | HTMLImageEle
     try {
       return await createImageBitmap(file);
     } catch {
-      // Safari occasionally refuses; fall through to an <img>.
     }
   }
 

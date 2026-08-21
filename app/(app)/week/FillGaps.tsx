@@ -3,10 +3,6 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-/**
- * Fills every empty dinner in the week from the recommender, in one go.
- * Deliberately only dinners — nobody wants a robot deciding their breakfast.
- */
 export default function FillGaps({ weekStart }: { weekStart: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();

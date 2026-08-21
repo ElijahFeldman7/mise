@@ -1,17 +1,3 @@
-/**
- * Fill the public recipe library.
- *
- * Runs on YOUR machine, not in the app — it needs internet and it writes with
- * the service-role key so it can insert public rows that RLS would otherwise
- * refuse. Nothing in the running app ever uses that key.
- *
- *   npm run seed
- *   npm run seed -- --letters=abc      (a smaller run while testing)
- *
- * Source: TheMealDB's free endpoint, normalised through the same ingredient
- * parser the app uses, plus the hand-written set in data/curated-recipes.json.
- */
-
 import "dotenv/config";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -47,7 +33,6 @@ type Meal = Record<string, string | null> & {
   strSource: string | null;
 };
 
-// TheMealDB's categories are mostly ingredients. Map to a meal of the day.
 const CATEGORY_MAP: Record<string, string> = {
   Breakfast: "breakfast",
   Dessert: "dessert",
@@ -70,7 +55,6 @@ const GAS_MARKS: Record<string, number> = {
   "6": 400, "7": 425, "8": 450, "9": 475,
 };
 
-/** Pull an oven temperature out of prose, in whatever units it was written. */
 function ovenTemp(text: string): number | null {
   const fahrenheit = text.match(/(\d{3})\s*(?:°|degrees?)?\s*F\b/i);
   if (fahrenheit) return clampTemp(Number(fahrenheit[1]));
@@ -91,10 +75,6 @@ function clampTemp(value: number): number | null {
   return value >= 200 && value <= 550 ? value : null;
 }
 
-/**
- * TheMealDB has no cook time, so read one out of the method: add up the
- * durations it mentions, and fall back to how much work the steps describe.
- */
 function estimateMinutes(instructions: string[], ingredientCount: number): number {
   const text = instructions.join(" ");
   let total = 0;
@@ -336,7 +316,7 @@ async function main() {
       counts[await upsert(prepared)] += 1;
     }
     console.log(`${meals.length} meals`);
-    await new Promise((r) => setTimeout(r, 250)); // be polite to a free API
+    await new Promise((r) => setTimeout(r, 250));
   }
 
   console.log(

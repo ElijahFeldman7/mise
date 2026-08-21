@@ -41,7 +41,7 @@ export default function RecipeForm({ initial }: { initial: FormValues }) {
     setValues((current) => {
       const next = [...current.ingredients];
       next[index] = { ...next[index], ...patch };
-      // Typing in the last row grows the list, so there is always a spare.
+
       if (index === next.length - 1 && (next[index].item || next[index].quantityText)) {
         next.push({ quantityText: "", item: "" });
       }

@@ -3,10 +3,6 @@
 import { useState, useTransition } from "react";
 import { addPlanEntry } from "@/lib/actions/plan";
 
-/**
- * Two jobs, same little form: write something into an existing slot without a
- * recipe, or invent a whole new time of day.
- */
 export default function AddSlot({
   date,
   presetLabel,

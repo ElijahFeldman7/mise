@@ -14,6 +14,8 @@ export default function SignOut() {
         startTransition(async () => {
           const supabase = createClient();
           await supabase.auth.signOut();
+
+          // eslint-disable-next-line @next/next/no-location-assign-relative-destination
           window.location.href = "/signin";
         })
       }

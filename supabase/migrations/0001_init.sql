@@ -1,16 +1,5 @@
--- ============================================================================
--- mise — schema
--- Meal planning, shared grocery lists, receipt reconciliation.
--- Everything is scoped to a household; a person always has exactly one active
--- household (created for them on first sign-in) and may belong to several.
--- ============================================================================
-
 create extension if not exists pgcrypto;
 create extension if not exists pg_trgm;
-
--- ---------------------------------------------------------------------------
--- Households
--- ---------------------------------------------------------------------------
 
 create table if not exists households (
   id            uuid primary key default gen_random_uuid(),
@@ -20,10 +9,6 @@ create table if not exists households (
   created_at    timestamptz not null default now()
 );
 
--- ---------------------------------------------------------------------------
--- Profiles (1:1 with auth.users)
--- ---------------------------------------------------------------------------
-
 create table if not exists profiles (
   id                   uuid primary key references auth.users (id) on delete cascade,
   email                text not null,
@@ -32,9 +17,8 @@ create table if not exists profiles (
   is_admin             boolean not null default false,
   active_household_id  uuid references households (id) on delete set null,
 
-  -- taste profile, feeds the recommender
-  diet_tags            text[] not null default '{}',   -- vegetarian, vegan, gluten_free, dairy_free, pork_free, nut_free
-  avoid_ingredients    text[] not null default '{}',   -- item_keys the recommender must never surface
+  diet_tags            text[] not null default '{}',
+  avoid_ingredients    text[] not null default '{}',
   liked_cuisines       text[] not null default '{}',
   weeknight_max_minutes int   not null default 45,
 
@@ -57,14 +41,6 @@ create table if not exists household_members (
 
 create index if not exists household_members_user_idx on household_members (user_id);
 
--- ---------------------------------------------------------------------------
--- Recipes
---
--- A recipe is either LIBRARY (owner_id is null, is_public true) or PERSONAL
--- (owned by a household). "Make it mine" copies a library row into the
--- household and records forked_from.
--- ---------------------------------------------------------------------------
-
 create table if not exists recipes (
   id             uuid primary key default gen_random_uuid(),
   title          text not null,
@@ -73,17 +49,17 @@ create table if not exists recipes (
   source         text not null default 'user' check (source in ('themealdb', 'curated', 'user')),
   source_id      text,
   source_url     text,
-  image_url      text,          -- remote image (library recipes)
-  image_path     text,          -- storage object path (user photos)
+  image_url      text,
+  image_path     text,
 
   instructions   text[] not null default '{}',
   total_minutes  int,
   active_minutes int,
   servings       int not null default 4,
-  oven_temp_f    int,          -- shown on the recipe when there is one
+  oven_temp_f    int,
 
   cuisine        text,
-  category       text,          -- breakfast | lunch | dinner | side | dessert | snack | prep
+  category       text,
   tags           text[] not null default '{}',
   diet_flags     text[] not null default '{}',
   effort         smallint not null default 2 check (effort between 1 and 3),
@@ -113,12 +89,12 @@ create table if not exists recipe_ingredients (
   recipe_id  uuid not null references recipes (id) on delete cascade,
   position   int not null default 0,
 
-  raw_text   text,                -- "2 lb Yukon gold potatoes, halved"
-  quantity   numeric,             -- 2
-  unit       text,                -- lb   (normalized token, null = count)
-  item       text not null,       -- "Yukon gold potatoes"
-  item_key   text not null,       -- "potato"  — what merging and matching use
-  note       text,                -- "halved"
+  raw_text   text,
+  quantity   numeric,
+  unit       text,
+  item       text not null,
+  item_key   text not null,
+  note       text,
   aisle      text not null default 'other',
   optional   boolean not null default false
 );
@@ -126,8 +102,6 @@ create table if not exists recipe_ingredients (
 create index if not exists recipe_ingredients_recipe_idx on recipe_ingredients (recipe_id);
 create index if not exists recipe_ingredients_key_idx on recipe_ingredients (item_key);
 
--- Photos of the finished dish, taken by whoever cooked it. Compressed on the
--- phone before upload, so what lands here is already a web-sized JPEG.
 create table if not exists recipe_photos (
   id           uuid primary key default gen_random_uuid(),
   recipe_id    uuid not null references recipes (id) on delete cascade,
@@ -142,14 +116,6 @@ create table if not exists recipe_photos (
 );
 
 create index if not exists recipe_photos_recipe_idx on recipe_photos (recipe_id, taken_at desc);
-
--- ---------------------------------------------------------------------------
--- The week
---
--- Slots are not an enum. A plan entry carries its own label and time, so a
--- household can invent "second breakfast" or "Sunday prep, 4pm" freely.
--- slot_templates just seeds the picker.
--- ---------------------------------------------------------------------------
 
 create table if not exists slot_templates (
   id           uuid primary key default gen_random_uuid(),
@@ -168,7 +134,7 @@ create table if not exists plan_entries (
   position     int not null default 0,
 
   recipe_id    uuid references recipes (id) on delete set null,
-  free_text    text,                    -- when there is no recipe: "leftovers"
+  free_text    text,
   servings     int not null default 2,
   note         text,
 
@@ -180,13 +146,6 @@ create table if not exists plan_entries (
 );
 
 create index if not exists plan_entries_household_date_idx on plan_entries (household_id, on_date);
-
--- ---------------------------------------------------------------------------
--- Grocery list
---
--- One list per household per week. Rows sourced from the plan are regenerated
--- on every plan change; manual rows and every checkbox survive that.
--- ---------------------------------------------------------------------------
 
 create table if not exists grocery_lists (
   id           uuid primary key default gen_random_uuid(),
@@ -205,7 +164,7 @@ create table if not exists grocery_items (
   item_key     text not null,
   quantity     numeric,
   unit         text,
-  display_qty  text,          -- "2 lb + 1 bunch" when two recipes disagree on units
+  display_qty  text,
   aisle        text not null default 'other',
 
   checked      boolean not null default false,
@@ -214,7 +173,7 @@ create table if not exists grocery_items (
   checked_via  text check (checked_via in ('tap', 'receipt')),
 
   source       text not null default 'plan' check (source in ('plan', 'manual', 'receipt')),
-  from_recipes text[] not null default '{}',   -- titles, for the little provenance chip
+  from_recipes text[] not null default '{}',
   added_by     uuid references profiles (id) on delete set null,
   position     int not null default 0,
   created_at   timestamptz not null default now(),
@@ -224,20 +183,12 @@ create table if not exists grocery_items (
 
 create index if not exists grocery_items_list_idx on grocery_items (list_id);
 
--- Things the household always has. Kept off the list, and counted as
--- "in the kitchen" when scoring a recipe.
 create table if not exists pantry_items (
   household_id uuid not null references households (id) on delete cascade,
   item_key     text not null,
   item         text not null,
   primary key (household_id, item_key)
 );
-
--- ---------------------------------------------------------------------------
--- Receipts
--- OCR happens on the phone; only the extracted text and the matches land here.
--- The photo is optional and private to the household.
--- ---------------------------------------------------------------------------
 
 create table if not exists receipts (
   id            uuid primary key default gen_random_uuid(),
@@ -266,10 +217,6 @@ create table if not exists receipt_lines (
 
 create index if not exists receipt_lines_receipt_idx on receipt_lines (receipt_id);
 
--- ---------------------------------------------------------------------------
--- Signals for the recommender
--- ---------------------------------------------------------------------------
-
 create table if not exists recipe_events (
   id           uuid primary key default gen_random_uuid(),
   household_id uuid not null references households (id) on delete cascade,
@@ -282,11 +229,6 @@ create table if not exists recipe_events (
 
 create index if not exists recipe_events_household_idx on recipe_events (household_id, happened_at desc);
 create index if not exists recipe_events_recipe_idx on recipe_events (recipe_id);
-
--- ============================================================================
--- Helpers. SECURITY DEFINER so policies can read membership without the
--- policy on household_members recursing into itself.
--- ============================================================================
 
 create or replace function public.my_household_ids()
 returns setof uuid
@@ -320,10 +262,6 @@ as $$
     where household_id = hid and user_id = auth.uid() and role = 'owner'
   );
 $$;
-
--- ============================================================================
--- Bootstrap: every new auth user gets a profile and their own household.
--- ============================================================================
 
 create or replace function public.handle_new_user()
 returns trigger
@@ -372,7 +310,6 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- Nobody grants themselves admin. Only an existing admin may move that bit.
 create or replace function public.guard_admin_flag()
 returns trigger
 language plpgsql security definer set search_path = public
@@ -390,10 +327,6 @@ create trigger profiles_guard_admin
   before update on profiles
   for each row execute function public.guard_admin_flag();
 
--- ============================================================================
--- Row level security
--- ============================================================================
-
 alter table households        enable row level security;
 alter table profiles          enable row level security;
 alter table household_members enable row level security;
@@ -409,19 +342,18 @@ alter table receipts          enable row level security;
 alter table receipt_lines     enable row level security;
 alter table recipe_events     enable row level security;
 
--- profiles ------------------------------------------------------------------
 create policy profiles_read on profiles for select using (
   id = auth.uid()
   or public.is_admin()
   or id in (select public.my_household_user_ids())
 );
+create policy profiles_insert_self on profiles for insert with check (id = auth.uid());
 create policy profiles_update_self on profiles for update using (
   id = auth.uid() or public.is_admin()
 ) with check (
   id = auth.uid() or public.is_admin()
 );
 
--- households ----------------------------------------------------------------
 create policy households_read on households for select using (
   id in (select public.my_household_ids()) or public.is_admin()
 );
@@ -433,7 +365,6 @@ create policy households_delete on households for delete using (
   public.is_household_owner(id) or public.is_admin()
 );
 
--- household_members ---------------------------------------------------------
 create policy members_read on household_members for select using (
   household_id in (select public.my_household_ids()) or public.is_admin()
 );
@@ -447,7 +378,6 @@ create policy members_leave on household_members for delete using (
   user_id = auth.uid() or public.is_household_owner(household_id) or public.is_admin()
 );
 
--- recipes -------------------------------------------------------------------
 create policy recipes_read on recipes for select using (
   is_public
   or household_id in (select public.my_household_ids())
@@ -493,7 +423,6 @@ create policy recipe_photos_write on recipe_photos for all
   using (household_id in (select public.my_household_ids()) or public.is_admin())
   with check (household_id in (select public.my_household_ids()));
 
--- everything else is plain household scoping --------------------------------
 create policy slots_all on slot_templates for all
   using (household_id in (select public.my_household_ids()) or public.is_admin())
   with check (household_id in (select public.my_household_ids()));
@@ -532,11 +461,6 @@ create policy events_all on recipe_events for all
   using (household_id in (select public.my_household_ids()) or public.is_admin())
   with check (household_id in (select public.my_household_ids()));
 
--- ============================================================================
--- Joining a household by code. SECURITY DEFINER because the joiner cannot see
--- the household row until they are already a member.
--- ============================================================================
-
 create or replace function public.join_household(code text)
 returns uuid
 language plpgsql security definer set search_path = public
@@ -559,10 +483,6 @@ begin
   return target;
 end;
 $$;
-
--- ============================================================================
--- Realtime + storage
--- ============================================================================
 
 alter publication supabase_realtime add table grocery_items;
 alter publication supabase_realtime add table plan_entries;

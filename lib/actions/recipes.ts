@@ -105,7 +105,6 @@ export async function saveRecipe(input: RecipeInput) {
   return { ok: true, id: recipeId };
 }
 
-/** "Make it mine" — copy a library recipe into the household so it can be edited. */
 export async function forkRecipe(recipeId: string) {
   const session = await requireSession();
   const supabase = await createClient();
@@ -199,7 +198,6 @@ export async function toggleSaved(recipeId: string, saved: boolean) {
   return { ok: true };
 }
 
-/** Record a photo of the finished dish after it has been uploaded to storage. */
 export async function addRecipePhoto(input: {
   recipeId: string;
   storagePath: string;

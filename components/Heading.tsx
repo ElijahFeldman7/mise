@@ -1,4 +1,3 @@
-/** The one flourish this app has: a heading underlined in the accent. */
 export default function Heading({
   children,
   color = "var(--accent)",

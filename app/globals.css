@@ -1,10 +1,5 @@
 @import "tailwindcss";
 
-/* ---------------------------------------------------------------------------
-   mise — paper, one accent, as few lines as the layout will tolerate.
-   Rules: no shadows, no uppercase, letter-spacing only ever tightens.
---------------------------------------------------------------------------- */
-
 :root {
   --paper: #f8f5f0;
   --rule: #eae6de;
@@ -46,78 +41,79 @@
   --font-hand: var(--font-caveat);
 }
 
-html {
-  background: var(--paper);
-  color: var(--ink);
-  -webkit-text-size-adjust: 100%;
+@layer base {
+  html {
+    background: var(--paper);
+    color: var(--ink);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100dvh;
+    overflow-x: hidden;
+    background: var(--paper);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    outline: none;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--ink-faint);
+  }
+
+  .field {
+    border-bottom: 1px solid var(--rule-strong);
+    padding-bottom: 9px;
+    width: 100%;
+  }
+
+  .field:focus-within {
+    border-bottom-color: var(--accent);
+  }
+
+  .heading {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    display: inline-block;
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 3px;
+  }
+
+  .margin-rule::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 51px;
+    width: 1px;
+    background: var(--margin-line);
+  }
+
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
 }
 
-body {
-  min-height: 100dvh;
-  overflow-x: hidden;
-  background: var(--paper);
-  color: var(--ink);
-  -webkit-font-smoothing: antialiased;
-  overscroll-behavior-y: none;
-}
-
-/* Nothing in this app is elevated. */
-* {
+*:not(:focus-visible) {
   box-shadow: none !important;
+}
+
+* {
   text-transform: none !important;
-}
-
-input,
-textarea,
-select,
-button {
-  font: inherit;
-  color: inherit;
-  background: transparent;
-  border: 0;
-  outline: none;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: var(--ink-faint);
-}
-
-/* Fields are one line, never a box. */
-.field {
-  border-bottom: 1px solid var(--rule-strong);
-  padding-bottom: 9px;
-  width: 100%;
-}
-
-.field:focus-within {
-  border-bottom-color: var(--accent);
-}
-
-/* The signature: a heading underlined in the accent. */
-.heading {
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  display: inline-block;
-  border-bottom: 2px solid var(--accent);
-  padding-bottom: 3px;
-}
-
-/* Ruled margin down the grocery list. */
-.margin-rule::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 51px;
-  width: 1px;
-  background: var(--margin-line);
-}
-
-::-webkit-scrollbar {
-  width: 0;
-  height: 0;
 }
 
 @media (prefers-reduced-motion: no-preference) {

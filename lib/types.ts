@@ -1,8 +1,3 @@
-/**
- * Database shape. Hand-written rather than generated so it stays readable —
- * Row types are exact, Insert/Update are deliberately forgiving.
- */
-
 export type Aisle =
   | "produce" | "meat" | "seafood" | "dairy" | "bakery"
   | "pantry" | "spices" | "frozen" | "drinks" | "household" | "other";
@@ -219,7 +214,6 @@ export type Database = {
   };
 };
 
-/** A plan entry with its recipe joined on, which is how the week reads it. */
 export type PlanEntryWithRecipe = PlanEntry & {
   recipe: Pick<Recipe, "id" | "title" | "image_url" | "image_path" | "total_minutes" | "oven_temp_f" | "servings"> | null;
 };

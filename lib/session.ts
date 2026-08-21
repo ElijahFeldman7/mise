@@ -10,10 +10,6 @@ export type Session = {
   role: "owner" | "member";
 };
 
-/**
- * Everything a page needs to know about who is asking. Cached per request, so
- * a layout and its page share one round trip.
- */
 export const getSession = cache(async (): Promise<Session | null> => {
   const supabase = await createClient();
 
@@ -22,11 +18,29 @@ export const getSession = cache(async (): Promise<Session | null> => {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: profile } = await supabase
+  let { data: profile } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
+
+  if (!profile) {
+    const { data: repaired } = await supabase
+      .from("profiles")
+      .insert({
+        id: user.id,
+        email: user.email ?? "",
+        display_name:
+          (user.user_metadata?.full_name as string) ??
+          (user.user_metadata?.name as string) ??
+          user.email?.split("@")[0] ??
+          null,
+        avatar_url: (user.user_metadata?.avatar_url as string) ?? null,
+      })
+      .select("*")
+      .single();
+    profile = repaired;
+  }
 
   if (!profile) return null;
 
@@ -40,6 +54,10 @@ export const getSession = cache(async (): Promise<Session | null> => {
       .limit(1)
       .maybeSingle();
     householdId = membership?.household_id ?? null;
+  }
+
+  if (!householdId) {
+    householdId = await makeHousehold(supabase, user.id, profile.display_name ?? "My");
   }
 
   if (!householdId) return null;
@@ -64,6 +82,42 @@ export const getSession = cache(async (): Promise<Session | null> => {
   };
 });
 
+async function makeHousehold(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  who: string,
+): Promise<string | null> {
+  const code = Array.from({ length: 6 }, () =>
+    "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".charAt(Math.floor(Math.random() * 32)),
+  ).join("");
+
+  const { data: household } = await supabase
+    .from("households")
+    .insert({ name: `${who}'s kitchen`, invite_code: code, created_by: userId })
+    .select("id")
+    .single();
+
+  if (!household) return null;
+  const householdId = household.id as string;
+
+  await supabase
+    .from("household_members")
+    .insert({ household_id: householdId, user_id: userId, role: "owner" });
+
+  await supabase.from("slot_templates").insert([
+    { household_id: householdId, name: "Breakfast", at_time: "07:30", position: 0 },
+    { household_id: householdId, name: "Lunch", at_time: "12:30", position: 1 },
+    { household_id: householdId, name: "Dinner", at_time: "18:30", position: 2 },
+  ]);
+
+  await supabase
+    .from("profiles")
+    .update({ active_household_id: householdId })
+    .eq("id", userId);
+
+  return householdId;
+}
+
 export async function requireSession(): Promise<Session> {
   const session = await getSession();
   if (!session) redirect("/signin");
@@ -76,7 +130,6 @@ export async function requireAdmin(): Promise<Session> {
   return session;
 }
 
-/** Public URL for a stored photo, or the remote one a library recipe came with. */
 export function photoUrl(
   bucket: string,
   path: string | null | undefined,

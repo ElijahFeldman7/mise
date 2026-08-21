@@ -7,10 +7,6 @@ import { compressImage } from "@/lib/images";
 import { addRecipePhoto, removeRecipePhoto } from "@/lib/actions/recipes";
 import { CameraIcon } from "@/components/Icons";
 
-/**
- * Photos of the dish as this house actually made it. Compressed on the phone
- * before they go anywhere — a camera frame lands at a couple of hundred KB.
- */
 export default function DishPhotos({
   recipeId,
   photos,

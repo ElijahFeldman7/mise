@@ -35,7 +35,6 @@ export default function GroceryList({
       state.map((item) => (item.id === change.id ? { ...item, checked: change.checked } : item)),
   );
 
-  // Anybody in the house ticking something off should show up here immediately.
   useEffect(() => {
     if (!listId) return;
     const supabase = createClient();

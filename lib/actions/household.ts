@@ -120,8 +120,6 @@ export async function rollInviteCode() {
   return { ok: true, code };
 }
 
-// --- the person -------------------------------------------------------------
-
 export async function updateProfile(patch: {
   displayName?: string;
   dietTags?: string[];

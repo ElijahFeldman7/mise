@@ -2,10 +2,6 @@ import { createClient } from "@/lib/supabase/server";
 import type { Candidate, HouseholdSignal, RawEvent } from "@/lib/recommend";
 import { buildHouseholdSignal, featuresOf } from "@/lib/recommend";
 
-/**
- * The public recipe library changes rarely and is the same for everybody, so
- * one process holds it for a few minutes rather than re-reading it per request.
- */
 type CacheEntry = { candidates: Candidate[]; loadedAt: number };
 let libraryCache: CacheEntry | null = null;
 const CACHE_MS = 5 * 60 * 1000;
@@ -71,7 +67,6 @@ export async function loadCandidates(householdId: string): Promise<Candidate[]> 
       .then(({ data }) => ((data ?? []) as RecipeRow[]).map(toCandidate)),
   ]);
 
-  // A household's own version of a recipe wins over the library original.
   const seen = new Set(mine.map((c) => c.id));
   return [...mine, ...library.filter((c) => !seen.has(c.id))];
 }
@@ -95,7 +90,6 @@ export async function loadSignal(
   return buildHouseholdSignal((data ?? []) as RawEvent[], features);
 }
 
-/** Everything already accounted for: this week's list plus the pantry. */
 export async function loadOnHand(householdId: string): Promise<Set<string>> {
   const supabase = await createClient();
 

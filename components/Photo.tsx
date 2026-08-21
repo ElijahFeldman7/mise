@@ -1,9 +1,5 @@
 import { PlateIcon } from "./Icons";
 
-/**
- * A dish photo. When there isn't one yet, a faint plate stands in — the only
- * place a drawing of food is allowed.
- */
 export default function Photo({
   src,
   alt,
@@ -47,7 +43,6 @@ export default function Photo({
   );
 }
 
-/** The wide version at the top of a recipe. */
 export function HeroPhoto({ src, alt }: { src?: string | null; alt?: string }) {
   if (!src) {
     return (

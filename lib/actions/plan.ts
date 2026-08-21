@@ -94,7 +94,6 @@ export async function removePlanEntry(id: string, date: string) {
   return { ok: true };
 }
 
-/** "We actually made this" — the strongest signal the recommender gets. */
 export async function markCooked(entryId: string, date: string) {
   const session = await requireSession();
   const supabase = await createClient();

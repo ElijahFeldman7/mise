@@ -9,12 +9,6 @@ import { addDays, fromISODate, toISODate, weekDays } from "@/lib/dates";
 import { rebuildGroceryList } from "@/lib/server/list";
 import type { DietFlag } from "@/lib/ingredients";
 
-/**
- * Fill every dinner the week is still missing.
- *
- * Days are filled one at a time, and each choice is fed back into the context
- * before the next — otherwise you get seven variations on the same dinner.
- */
 export async function POST(request: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "not signed in" }, { status: 401 });

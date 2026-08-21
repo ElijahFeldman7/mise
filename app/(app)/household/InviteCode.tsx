@@ -30,7 +30,6 @@ export default function InviteCode({ code, canRoll }: { code: string; canRoll: b
         await navigator.share({ title: "Join our kitchen on mise", url });
         return;
       } catch {
-        // they cancelled — fall through to copying
       }
     }
     await navigator.clipboard.writeText(url);

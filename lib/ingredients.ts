@@ -1,12 +1,3 @@
-/**
- * Ingredient normalisation.
- *
- * Everything downstream keys off `itemKey()`: merging two recipes onto one
- * grocery line, matching a receipt line to a list row, deciding whether a
- * recipe fits somebody's diet, and scoring how much of a recipe you already
- * have. Get the key right and the rest is arithmetic.
- */
-
 import { parseMeasure } from "./units";
 
 export type Aisle =
@@ -41,7 +32,6 @@ export const AISLE_LABEL: Record<Aisle, string> = {
   other: "Everything else",
 };
 
-/** Words that describe how an ingredient was prepared, not what it is. */
 const DESCRIPTORS = new Set([
   "fresh", "freshly", "frozen", "dried", "dry", "ground", "whole", "half", "halved",
   "chopped", "finely", "coarsely", "roughly", "thinly", "thickly", "sliced", "diced",
@@ -60,7 +50,6 @@ const DESCRIPTORS = new Set([
   "store", "bought", "homemade", "leftover", "day", "old", "stale", "thawed",
 ]);
 
-/** British and regional names, brand-speak, and plain synonyms. */
 const SYNONYMS: Record<string, string> = {
   "aubergine": "eggplant",
   "courgette": "zucchini",
@@ -165,11 +154,6 @@ const AISLE_RULES: Array<[Aisle, RegExp]> = [
   ["pantry",  /\b(miso|mirin|granola|water|gochujang|curry paste|harissa|capers|worcestershire|flour|sugar|rice|pasta|noodle|oat|quinoa|couscous|barley|lentil|bean|chickpea|stock|oil|vinegar|soy sauce|fish sauce|hoisin|sriracha|ketchup|mustard|mayonnaise|honey|syrup|molasses|jam|peanut butter|tahini|coconut milk|canned|tin|tomato paste|tomato sauce|breadcrumb|cornstarch|baking powder|baking soda|yeast|chocolate|cocoa|nut|almond|walnut|pecan|cashew|pistachio|raisin|seed|gelatin|broth)\b/],
 ];
 
-/**
- * Things nobody puts on a grocery list because they are always in the cupboard.
- * Kept off generated lists, and excluded from the "how much of this do I
- * already have" denominator so the score means something.
- */
 export const STAPLES = new Set([
   "salt", "pepper", "black pepper", "water", "ice", "olive oil", "vegetable oil",
   "canola oil", "cooking spray", "sugar", "flour", "baking powder", "baking soda",
@@ -198,18 +182,16 @@ export const DIET_LABEL: Record<DietFlag, string> = {
   egg_free: "No eggs",
 };
 
-/** The handful of -ves plurals that turn back into -f, not -ve. */
 const VES_PLURALS = new Set([
   "leaves", "loaves", "halves", "knives", "shelves", "wolves", "calves", "hooves", "thieves",
 ]);
 
-/** Strip an ingredient name down to the thing you actually buy. */
 export function itemKey(name: string): string {
   let text = name
     .toLowerCase()
-    .replace(/\([^)]*\)/g, " ")          // "(about 400g)"
-    .replace(/,.*$/, " ")                 // everything after the first comma is prep
-    .replace(/-/g, " ")                   // free-range, extra-virgin, bone-in
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/,.*$/, " ")
+    .replace(/-/g, " ")
     .replace(/[^a-z\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -221,7 +203,6 @@ export function itemKey(name: string): string {
   text = words.join(" ").trim();
   if (!text) text = name.toLowerCase().trim();
 
-  // Gentle singularisation — enough for grocery nouns, no library needed.
   text = text
     .split(" ")
     .map((word) => {
@@ -250,7 +231,6 @@ export function isStaple(key: string): boolean {
   return STAPLES.has(key);
 }
 
-/** Which diets a set of ingredient keys is compatible with. */
 export function dietFlagsFor(keys: string[]): DietFlag[] {
   const all = keys.join(" | ");
   const flags: DietFlag[] = [];
@@ -284,7 +264,6 @@ export type ParsedIngredient = {
   optional: boolean;
 };
 
-/** Parse "2 lb" + "Yukon gold potatoes" into a row we can store. */
 export function parseIngredient(
   measure: string | null | undefined,
   name: string,
@@ -297,8 +276,6 @@ export function parseIngredient(
   const key = itemKey(cleanName);
   if (!key) return null;
 
-  // "Yukon gold potatoes, halved" — the list wants the potatoes, the recipe
-  // wants the halving. Split them.
   const [baseName, ...preparation] = cleanName.split(",");
   const prep = preparation.join(",").trim();
 
@@ -319,12 +296,10 @@ export function parseIngredient(
   };
 }
 
-/** Parse a whole free-text ingredient line, the way somebody types one in. */
 export function parseIngredientLine(line: string, position: number): ParsedIngredient | null {
   const text = line.trim();
   if (!text) return null;
 
-  // Pull a leading measure off the front: "1 1/2 cups flour" -> "1 1/2 cups" | "flour"
   const match = text.match(
     /^((?:\d+[\s\-\/¼½¾⅓⅔⅛⅜⅝⅞.]*)+\s*[a-zA-Z.]*\s*)(.*)$/,
   );
@@ -339,7 +314,6 @@ function titleCase(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-/** How much two recipes have in common, by ingredient. Jaccard, staples excluded. */
 export function ingredientOverlap(a: string[], b: string[]): number {
   const setA = new Set(a.filter((k) => !isStaple(k)));
   const setB = new Set(b.filter((k) => !isStaple(k)));

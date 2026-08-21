@@ -1,21 +1,3 @@
-/**
- * What should we eat?
- *
- * A transparent hybrid scorer. Six signals, each normalised to 0–1, combined
- * with fixed weights. Every recommendation carries the reason it won, because a
- * suggestion you cannot argue with is a suggestion you stop trusting.
- *
- *   pantry overlap   0.28   how much of it you already have
- *   household taste  0.24   what this house actually cooks and rates well
- *   variety          0.18   not this again, and not four lentil dinners in a row
- *   effort fit       0.14   does it fit the time this day gets
- *   seasonality      0.10   is its produce any good right now
- *   novelty          0.06   a small nudge to try something
- *
- * Hard filters run first — diet, banned ingredients, already planned, wrong
- * meal for the slot. Those are rules, not preferences, and never get outvoted.
- */
-
 import { ingredientOverlap, isStaple, type DietFlag } from "./ingredients";
 
 export type Candidate = {
@@ -34,30 +16,28 @@ export type Candidate = {
 };
 
 export type HouseholdSignal = {
-  /** recipe_id -> most recent time it was cooked */
   lastCooked: Map<string, Date>;
-  /** recipe_id -> how many times, ever */
+
   timesCooked: Map<string, number>;
-  /** recipe_id -> latest rating 1–5 */
+
   ratings: Map<string, number>;
-  /** recipe ids the house passed over when suggested */
+
   skipped: Set<string>;
-  /** feature -> weight, learned from cooked / rated / skipped history */
+
   taste: Map<string, number>;
-  /** how many events went into `taste` — low means trust it less */
+
   eventCount: number;
 };
 
 export type Context = {
-  /** item_keys already on this week's grocery list, plus the pantry */
   onHand: Set<string>;
-  /** ingredient key sets of everything already planned this week */
+
   plannedIngredientSets: string[][];
-  /** recipe ids already on the plan this week */
+
   plannedRecipeIds: Set<string>;
-  /** the day being filled */
+
   date: Date;
-  /** the slot label being filled, e.g. "Dinner" */
+
   slot: string;
   dietTags: DietFlag[];
   avoidIngredients: string[];
@@ -80,7 +60,6 @@ const WEIGHTS = {
   novelty: 0.06,
 } as const;
 
-/** Produce worth eating in a given month (1–12), by ingredient key. */
 const SEASONS: Record<string, number[]> = {
   asparagus: [3, 4, 5, 6],
   strawberry: [4, 5, 6, 7],
@@ -121,10 +100,6 @@ const BREAKFAST_SLOTS = /breakfast|brunch/i;
 const SNACK_SLOTS = /snack|tea/i;
 const PREP_SLOTS = /prep|batch|make ahead/i;
 
-// ---------------------------------------------------------------------------
-// Building the household's taste from what it has actually done
-// ---------------------------------------------------------------------------
-
 export type RawEvent = {
   recipe_id: string;
   kind: "planned" | "cooked" | "rated" | "skipped" | "saved" | "unsaved";
@@ -132,11 +107,6 @@ export type RawEvent = {
   happened_at: string;
 };
 
-/**
- * Turn the event log into a weighted feature vector. Features are ingredient
- * keys, cuisine, and tags — the things a recipe is made of — so the profile
- * generalises to recipes the house has never seen.
- */
 export function buildHouseholdSignal(
   events: RawEvent[],
   featuresByRecipe: Map<string, string[]>,
@@ -151,7 +121,7 @@ export function buildHouseholdSignal(
   const bump = (recipeId: string, weight: number, ageDays: number) => {
     const features = featuresByRecipe.get(recipeId);
     if (!features?.length) return;
-    // Old opinions still count, just less. Half-life of roughly four months.
+
     const recency = Math.pow(0.5, ageDays / 120);
     const perFeature = (weight * recency) / Math.sqrt(features.length);
     for (const feature of features) {
@@ -208,10 +178,6 @@ export function featuresOf(candidate: Candidate): string[] {
   return features;
 }
 
-// ---------------------------------------------------------------------------
-// Hard filters
-// ---------------------------------------------------------------------------
-
 function slotAllows(candidate: Candidate, slot: string): boolean {
   const category = (candidate.category ?? "").toLowerCase();
 
@@ -224,7 +190,7 @@ function slotAllows(candidate: Candidate, slot: string): boolean {
   if (PREP_SLOTS.test(slot)) {
     return category !== "dessert";
   }
-  // Lunch and dinner take anything that is not explicitly breakfast or dessert.
+
   return category !== "breakfast" && category !== "dessert";
 }
 
@@ -244,10 +210,6 @@ export function passesFilters(candidate: Candidate, context: Context): boolean {
 
   return slotAllows(candidate, context.slot);
 }
-
-// ---------------------------------------------------------------------------
-// The six signals
-// ---------------------------------------------------------------------------
 
 function overlapScore(candidate: Candidate, context: Context): { score: number; have: number; need: number } {
   const needed = candidate.ingredient_keys.filter((key) => !isStaple(key));
@@ -277,7 +239,7 @@ function tasteScore(candidate: Candidate, signal: HouseholdSignal): number {
   if (profileNorm === 0 || candidateNorm === 0) return 0.5;
 
   const cosine = dot / (Math.sqrt(candidateNorm) * Math.sqrt(profileNorm));
-  // cosine lands in roughly [-1, 1]; squash it into [0, 1] with a gentle curve
+
   return 1 / (1 + Math.exp(-4 * cosine));
 }
 
@@ -291,11 +253,10 @@ function varietyScore(candidate: Candidate, signal: HouseholdSignal, context: Co
 
   if (last) {
     daysSince = (context.date.getTime() - last.getTime()) / 86_400_000;
-    // Cooked yesterday scores ~0; three weeks ago is most of the way back to 1.
+
     recencyPart = 1 - Math.exp(-Math.max(0, daysSince) / 21);
   }
 
-  // Don't suggest a fourth thing built from the same ingredients this week.
   let maxSimilarity = 0;
   for (const planned of context.plannedIngredientSets) {
     maxSimilarity = Math.max(maxSimilarity, ingredientOverlap(candidate.ingredient_keys, planned));
@@ -306,7 +267,7 @@ function varietyScore(candidate: Candidate, signal: HouseholdSignal, context: Co
 }
 
 function effortScore(candidate: Candidate, context: Context): { score: number; limit: number } {
-  const day = context.date.getDay(); // 0 Sun … 6 Sat
+  const day = context.date.getDay();
   const isWeeknight = day >= 1 && day <= 4;
   const isPrep = PREP_SLOTS.test(context.slot);
 
@@ -319,7 +280,6 @@ function effortScore(candidate: Candidate, context: Context): { score: number; l
   const minutes = candidate.total_minutes ?? (candidate.effort === 1 ? 20 : candidate.effort === 2 ? 45 : 90);
 
   if (isPrep) {
-    // A prep slot actually wants something worth the oven being on.
     return { score: Math.min(1, minutes / 90), limit };
   }
 
@@ -343,7 +303,6 @@ function noveltyScore(candidate: Candidate, signal: HouseholdSignal): number {
   return Math.max(0, 1 - times / 6);
 }
 
-/** Deterministic per (recipe, week) wobble, so the order is stable but not frozen forever. */
 function jitter(id: string, seed: string): number {
   let hash = 2166136261;
   const text = `${id}:${seed}`;
@@ -354,17 +313,12 @@ function jitter(id: string, seed: string): number {
   return ((hash >>> 0) % 1000) / 1000;
 }
 
-// ---------------------------------------------------------------------------
-// Putting it together
-// ---------------------------------------------------------------------------
-
 export function recommend(
   candidates: Candidate[],
   signal: HouseholdSignal,
   context: Context,
   limit = 12,
 ): Scored[] {
-  // With almost no history, trust the taste model less and lean on overlap.
   const confidence = Math.min(1, signal.eventCount / 12);
   const weights = {
     ...WEIGHTS,
@@ -402,7 +356,6 @@ export function recommend(
       parts.season * weights.season +
       parts.novelty * weights.novelty;
 
-    // The house passed on this once already — nudge it down, don't bury it.
     if (signal.skipped.has(candidate.id)) score *= 0.75;
 
     score += jitter(candidate.id, weekSeed) * 0.02;
@@ -418,10 +371,6 @@ export function recommend(
   return scored.sort((a, b) => b.score - a.score).slice(0, limit);
 }
 
-/**
- * The sentence under the recipe name. Whichever signal is furthest above its
- * neutral point gets to speak, because that is honestly why it won.
- */
 function explain(
   candidate: Candidate,
   detail: {

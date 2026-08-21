@@ -32,7 +32,6 @@ export async function toggleGroceryItem(id: string, checked: boolean) {
   return { ok: true };
 }
 
-/** Somebody types "coffee beans" or "2 lb carrots" into the bottom of the list. */
 export async function addManualItem(text: string) {
   const session = await requireSession();
   const trimmed = text.trim();
@@ -86,7 +85,6 @@ export async function clearCheckedItems() {
   return { ok: true };
 }
 
-/** "We always have this" — keeps it off future lists. */
 export async function keepInPantry(item: string) {
   const session = await requireSession();
   const supabase = await createClient();

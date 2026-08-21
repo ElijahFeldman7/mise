@@ -1,5 +1,3 @@
-/** Weeks start on Monday. Dates on the wire are always "YYYY-MM-DD", local. */
-
 export const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 export const FULL_DAY_NAMES = [
   "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
@@ -19,7 +17,7 @@ export function fromISODate(iso: string): Date {
 
 export function startOfWeek(date: Date): Date {
   const copy = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const offset = (copy.getDay() + 6) % 7; // Monday = 0
+  const offset = (copy.getDay() + 6) % 7;
   copy.setDate(copy.getDate() - offset);
   return copy;
 }
@@ -43,7 +41,6 @@ export function isToday(date: Date): boolean {
   );
 }
 
-/** "Aug 17 – 23", or "Aug 30 – Sep 5" when it straddles a month. */
 export function formatWeekRange(weekStart: Date): string {
   const end = addDays(weekStart, 6);
   const startMonth = weekStart.toLocaleString("en-US", { month: "short" });
@@ -57,7 +54,6 @@ export function formatLongDate(date: Date): string {
   return date.toLocaleString("en-US", { weekday: "long", month: "short", day: "numeric" });
 }
 
-/** "18:30:00" -> "6:30". Empty for a slot with no time. */
 export function formatTime(time: string | null): string {
   if (!time) return "";
   const [hourText, minuteText] = time.split(":");

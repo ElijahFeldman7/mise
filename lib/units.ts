@@ -1,19 +1,8 @@
-/**
- * Units, quantities, and how two of them add up.
- *
- * Recipes disagree constantly — one calls for "2 cups" of stock and another
- * for "500 ml". To merge them onto one grocery line we convert everything to a
- * base unit within its dimension, add, and render back out in whatever unit a
- * person would actually write on a list.
- */
-
 export type Dimension = "volume" | "weight" | "count";
 
 type UnitDef = { dimension: Dimension; base: number; display: string };
 
-/** Base units: teaspoon for volume, gram for weight, "each" for count. */
 const UNITS: Record<string, UnitDef> = {
-  // volume
   tsp:    { dimension: "volume", base: 1,        display: "tsp" },
   tbsp:   { dimension: "volume", base: 3,        display: "tbsp" },
   floz:   { dimension: "volume", base: 6,        display: "fl oz" },
@@ -24,13 +13,11 @@ const UNITS: Record<string, UnitDef> = {
   ml:     { dimension: "volume", base: 0.202884, display: "ml" },
   l:      { dimension: "volume", base: 202.884,  display: "L" },
 
-  // weight
   g:      { dimension: "weight", base: 1,        display: "g" },
   kg:     { dimension: "weight", base: 1000,     display: "kg" },
   oz:     { dimension: "weight", base: 28.3495,  display: "oz" },
   lb:     { dimension: "weight", base: 453.592,  display: "lb" },
 
-  // count-ish; these do not convert into each other, they just carry a word
   each:   { dimension: "count", base: 1, display: "" },
   clove:  { dimension: "count", base: 1, display: "clove" },
   head:   { dimension: "count", base: 1, display: "head" },
@@ -114,12 +101,6 @@ export function dimensionOf(unit: string | null): Dimension {
   return UNITS[unit]?.dimension ?? "count";
 }
 
-/**
- * Turn a measure string into a number and a unit.
- *
- * Handles the shapes recipe data actually ships: "1 1/2 cups", "½ tsp",
- * "2-3 tbsp", "400g", "1 can (400 g)", "a pinch", "to taste".
- */
 export function parseMeasure(measure: string | null | undefined): {
   quantity: number | null;
   unit: string | null;
@@ -134,11 +115,9 @@ export function parseMeasure(measure: string | null | undefined): {
     return { quantity: null, unit: null, note: "to taste" };
   }
 
-  // Drop a parenthetical gloss: "1 can (400 g)" -> "1 can"
   const parenthetical = text.match(/\(([^)]*)\)/)?.[1] ?? null;
   text = text.replace(/\([^)]*\)/g, " ").trim();
 
-  // Expand vulgar fractions into decimals, keeping any leading whole number.
   for (const [glyph, value] of Object.entries(VULGAR)) {
     if (text.includes(glyph)) {
       text = text.replace(new RegExp(`(\\d+)\\s*${glyph}`, "g"), (_m, whole) =>
@@ -148,13 +127,11 @@ export function parseMeasure(measure: string | null | undefined): {
     }
   }
 
-  // "1 1/2" -> 1.5, then bare "3/4" -> 0.75
   text = text.replace(/(\d+)\s+(\d+)\s*\/\s*(\d+)/g, (_m, w, n, d) =>
     String(Number(w) + Number(n) / Number(d)),
   );
   text = text.replace(/(\d+)\s*\/\s*(\d+)/g, (_m, n, d) => String(Number(n) / Number(d)));
 
-  // A range means "about the middle of that".
   text = text.replace(/(\d*\.?\d+)\s*(?:-|–|to)\s*(\d*\.?\d+)/g, (_m, a, b) =>
     String((Number(a) + Number(b)) / 2),
   );
@@ -169,12 +146,9 @@ export function parseMeasure(measure: string | null | undefined): {
   const quantity = Number(match[1]);
   const rest = match[2].trim();
 
-  // "400g" with no space
   const glued = rest === "" ? text.match(/^\d*\.?\d+([a-z]+)$/)?.[1] : null;
   const unit = normalizeUnit(rest.split(/\s+/)[0] ?? glued ?? null) ?? normalizeUnit(glued);
 
-  // If the parenthetical held the real weight ("1 can (400 g)"), prefer nothing —
-  // a can is what you buy. Keep the gloss as a note.
   return {
     quantity: Number.isFinite(quantity) ? quantity : null,
     unit,
@@ -182,7 +156,6 @@ export function parseMeasure(measure: string | null | undefined): {
   };
 }
 
-/** Convert to the dimension's base unit. Returns null when it cannot. */
 export function toBase(quantity: number, unit: string | null): number | null {
   if (!unit) return quantity;
   const def = UNITS[unit];
@@ -193,7 +166,6 @@ export function toBase(quantity: number, unit: string | null): number | null {
 const VOLUME_LADDER = ["gallon", "quart", "pint", "cup", "tbsp", "tsp"] as const;
 const WEIGHT_LADDER = ["lb", "oz", "g"] as const;
 
-/** Render a base-unit amount back into something worth writing on a list. */
 export function fromBase(amount: number, dimension: Dimension, unitHint?: string | null): {
   quantity: number;
   unit: string | null;
@@ -202,7 +174,6 @@ export function fromBase(amount: number, dimension: Dimension, unitHint?: string
     return { quantity: round(amount), unit: unitHint && unitHint !== "each" ? unitHint : null };
   }
 
-  // Metric in, metric out.
   if (unitHint === "ml" || unitHint === "l") {
     const ml = amount / UNITS.ml.base;
     return ml >= 1000 ? { quantity: round(ml / 1000), unit: "l" } : { quantity: round(ml), unit: "ml" };
@@ -222,7 +193,7 @@ export function fromBase(amount: number, dimension: Dimension, unitHint?: string
 
 function round(n: number): number {
   if (n >= 10) return Math.round(n);
-  if (n >= 1) return Math.round(n * 4) / 4;   // quarters, the way people measure
+  if (n >= 1) return Math.round(n * 4) / 4;
   return Math.round(n * 8) / 8;
 }
 
@@ -248,13 +219,6 @@ export function formatQuantity(quantity: number | null, unit: string | null): st
   return display ? `${number} ${display}`.trim() : number;
 }
 
-/**
- * Add up several amounts of the same ingredient.
- *
- * Everything that shares the dominant dimension is summed properly. Anything
- * that does not (a "bunch" alongside "200 g") is carried through as text, so
- * the list can say "200 g + 1 bunch" rather than silently losing one of them.
- */
 export function mergeAmounts(
   parts: Array<{ quantity: number | null; unit: string | null }>,
 ): { quantity: number | null; unit: string | null; display: string } {
@@ -269,7 +233,6 @@ export function mergeAmounts(
     byDimension.set(dim, bucket);
   }
 
-  // Prefer the dimension with the most entries; weight beats volume beats count on a tie.
   const priority: Dimension[] = ["weight", "volume", "count"];
   const dominant = [...byDimension.keys()].sort((a, b) => {
     const sizeDiff = byDimension.get(b)!.length - byDimension.get(a)!.length;
@@ -287,7 +250,6 @@ export function mergeAmounts(
     else total += base;
   }
 
-  // Count units only add up when they are the same word.
   if (dominant === "count") {
     const groups = new Map<string, number>();
     for (const part of main) {
@@ -324,7 +286,6 @@ export function mergeAmounts(
   };
 }
 
-/** Scale a recipe amount when the cook changes how many people are eating. */
 export function scaleAmount(quantity: number | null, factor: number): number | null {
   if (quantity === null) return null;
   return Math.round(quantity * factor * 100) / 100;

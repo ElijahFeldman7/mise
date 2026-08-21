@@ -2,12 +2,6 @@ import { createClient } from "@/lib/supabase/server";
 import { buildGroceryRows, diffGroceryRows, type PlannedRecipe } from "@/lib/groceries";
 import { addDays, fromISODate, toISODate } from "@/lib/dates";
 
-/**
- * Regenerate the plan-derived half of a week's grocery list.
- *
- * Called after anything that changes what is planned. Hand-added rows and
- * anything already ticked off are left exactly where they are.
- */
 export async function rebuildGroceryList(householdId: string, weekStart: string) {
   const supabase = await createClient();
   const start = fromISODate(weekStart);
@@ -50,7 +44,6 @@ export async function rebuildGroceryList(householdId: string, weekStart: string)
 
   const desired = buildGroceryRows(planned, pantryKeys);
 
-  // Find or make the list for this week.
   let listId: string | null = null;
   const { data: found } = await supabase
     .from("grocery_lists")

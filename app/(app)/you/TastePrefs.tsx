@@ -11,10 +11,6 @@ const DIETS: DietFlag[] = [
   "gluten_free", "dairy_free", "pork_free", "nut_free", "egg_free",
 ];
 
-/**
- * The three things the recommender actually listens to: what you won't eat,
- * what you never want suggested, and how long a weeknight gets.
- */
 export default function TastePrefs({
   dietTags,
   avoid,
