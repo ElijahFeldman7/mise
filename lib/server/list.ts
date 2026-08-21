@@ -1,5 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
-import { buildGroceryRows, diffGroceryRows, type PlannedRecipe } from "@/lib/groceries";
+import {
+  applyPantry,
+  buildGroceryRows,
+  diffGroceryRows,
+  type PantryEntry,
+  type PlannedRecipe,
+} from "@/lib/groceries";
 import { addDays, fromISODate, toISODate } from "@/lib/dates";
 
 export async function rebuildGroceryList(householdId: string, weekStart: string) {
@@ -38,11 +44,14 @@ export async function rebuildGroceryList(householdId: string, weekStart: string)
 
   const { data: pantry } = await supabase
     .from("pantry_items")
-    .select("item_key")
+    .select("item_key, status, kind, quantity, unit")
     .eq("household_id", householdId);
-  const pantryKeys = new Set((pantry ?? []).map((row) => row.item_key as string));
 
-  const desired = buildGroceryRows(planned, pantryKeys);
+  const cupboard = new Map<string, PantryEntry>(
+    (pantry ?? []).map((row) => [row.item_key as string, row as unknown as PantryEntry]),
+  );
+
+  const desired = applyPantry(buildGroceryRows(planned), cupboard);
 
   let listId: string | null = null;
   const { data: found } = await supabase
@@ -82,6 +91,7 @@ export async function rebuildGroceryList(householdId: string, weekStart: string)
         unit: row.unit,
         display_qty: row.display_qty || null,
         aisle: row.aisle,
+        note: row.note,
         source: "plan",
         from_recipes: row.from_recipes,
         position: row.position,
@@ -99,6 +109,7 @@ export async function rebuildGroceryList(householdId: string, weekStart: string)
         from_recipes: row.from_recipes,
         item: row.item,
         aisle: row.aisle,
+        note: row.note,
         position: row.position,
       })
       .eq("id", id);

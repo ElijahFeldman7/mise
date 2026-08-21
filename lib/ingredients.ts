@@ -1,4 +1,4 @@
-import { parseMeasure } from "./units";
+import { CONTAINERS, parseMeasure, takeAmount, takePackSize, takeUnit } from "./units";
 
 export type Aisle =
   | "produce"
@@ -48,7 +48,26 @@ const DESCRIPTORS = new Set([
   "cut", "into", "wedges", "chunks", "strips", "pieces", "cubes", "matchsticks",
   "about", "approximately", "roughly", "packed", "level", "heaped", "heaping",
   "store", "bought", "homemade", "leftover", "day", "old", "stale", "thawed",
+  "sodium", "virgin", "quality", "premium", "authentic", "traditional",
 ]);
+
+/** Spelling, not meaning — applied word by word so compounds normalise too. */
+const SPELLINGS: Record<string, string> = {
+  chilli: "chili", chilly: "chili", chile: "chili", yoghurt: "yogurt", flavour: "flavor",
+  colour: "color", fibre: "fiber", litre: "liter", grey: "gray",
+  doughnut: "donut", tomatos: "tomato", potatos: "potato",
+};
+
+/**
+ * Compounds whose meaning the descriptor pass would destroy: ground coriander
+ * is a seed, not a leaf, and ground ginger is not the knobbly thing.
+ */
+const COMPOUNDS: Array<[RegExp, string]> = [
+  [/\bground coriander\b|\bcoriander powder\b|\bcoriander seeds?\b/, "coriander seed"],
+  [/\bground ginger\b|\bginger powder\b/, "ginger powder"],
+  [/\bground almonds?\b|\balmond meal\b/, "almond flour"],
+  [/\bdried mint\b/, "dried mint"],
+];
 
 const SYNONYMS: Record<string, string> = {
   "aubergine": "eggplant",
@@ -116,6 +135,11 @@ const SYNONYMS: Record<string, string> = {
   "sunflower oil": "vegetable oil",
   "groundnut oil": "peanut oil",
   "extra virgin olive oil": "olive oil",
+  "virgin olive oil": "olive oil",
+  "chicken broth": "chicken stock",
+  "beef broth": "beef stock",
+  "vegetable broth": "vegetable stock",
+  "chicken stock": "chicken stock",
   "chilli": "chili",
   "chilli flake": "chili flake",
   "red pepper flake": "chili flake",
@@ -141,13 +165,16 @@ const SYNONYMS: Record<string, string> = {
   "rice noodle": "noodle",
 };
 
+/** Words that make something a store-cupboard thing whatever else is in the name. */
+const KEEPS = /\b(oil|stock|broth|bouillon|sauce|paste|powder|extract|seasoning|vinegar|syrup)\b/;
+
 const AISLE_RULES: Array<[Aisle, RegExp]> = [
   ["produce", /\b(lettuce|spinach|kale|arugula|chard|cabbage|broccoli|cauliflower|carrot|celery|onion|shallot|leek|garlic|ginger|potato|yam|sweet potato|tomato|cucumber|zucchini|squash|pumpkin|eggplant|bell pepper|chili|jalapeno|mushroom|corn|pea|green bean|asparagus|beet|radish|turnip|rutabaga|parsnip|fennel|avocado|apple|banana|orange|lemon|lime|grape|berry|berries|strawberr|blueberr|raspberr|melon|mango|pineapple|peach|pear|plum|cherry|apricot|fig|date|pomegranate|herb|parsley|cilantro|basil|mint|dill|thyme|rosemary|sage|tarragon|chive|scallion|green onion|sprout|lettuce|romaine|endive|watercress|bok choy|snow pea|snap pea|okra|artichoke|olive)\b/],
   ["meat",    /\b(chicken|beef|steak|pork|lamb|veal|turkey|duck|bacon|sausage|ham|prosciutto|chorizo|salami|pepperoni|mince|brisket|ribs?|tenderloin|sirloin|chuck|thigh|drumstick|breast|ground (beef|pork|lamb|turkey|chicken))\b/],
   ["seafood", /\b(salmon|tuna|cod|halibut|haddock|tilapia|trout|bass|snapper|sardine|anchovy|mackerel|shrimp|prawn|crab|lobster|scallop|mussel|clam|oyster|squid|calamari|octopus|fish)\b/],
   ["dairy",   /\b(milk|cream|butter|cheese|cheddar|mozzarella|parmesan|feta|ricotta|gouda|brie|gruyere|yogurt|yoghurt|kefir|egg|eggs|buttermilk|creme fraiche|mascarpone|cottage cheese|half and half)\b/],
   ["bakery",  /\b(bread|baguette|roll|bun|bagel|tortilla|pita|naan|croissant|brioche|sourdough|focaccia|crumpet|muffin|pastry|puff pastry|filo|phyllo|pizza dough|cake)\b/],
-  ["spices",  /\b(bay leaf|salt|pepper|paprika|cumin|coriander seed|turmeric|cinnamon|nutmeg|clove|cardamom|allspice|bay leaf|oregano|marjoram|curry powder|garam masala|chili powder|chili flake|cayenne|saffron|vanilla|star anise|fennel seed|mustard seed|sesame seed|peppercorn|za.?atar|sumac|five spice|italian seasoning|herbes de provence|seasoning|spice)\b/],
+  ["spices",  /\b(bay leaf|salt|pepper|paprika|cumin|coriander seed|turmeric|cinnamon|nutmeg|clove|cardamom|allspice|bay leaf|oregano|marjoram|curry powder|garam masala|chili powder|chili flake|cayenne|saffron|vanilla|star anise|fennel seed|mustard seed|sesame seed|peppercorn|za.?atar|sumac|five spice|italian seasoning|herbes de provence|seasoning|spice|garlic powder|onion powder)\b/],
   ["frozen",  /\b(frozen|ice cream|sorbet|frozen pea|puff pastry sheet)\b/],
   ["drinks",  /\b(wine|beer|cider|vodka|rum|whisk|brandy|sherry|vermouth|juice|soda|cola|coffee|tea|sparkling water|tonic)\b/],
   ["household", /\b(paper towel|plastic wrap|foil|parchment|dish soap|detergent|sponge|trash bag|napkin|toilet paper)\b/],
@@ -187,8 +214,12 @@ const VES_PLURALS = new Set([
 ]);
 
 export function itemKey(name: string): string {
-  let text = name
-    .toLowerCase()
+  const lowered = name.toLowerCase();
+  for (const [pattern, replacement] of COMPOUNDS) {
+    if (pattern.test(lowered)) return replacement;
+  }
+
+  let text = lowered
     .replace(/\([^)]*\)/g, " ")
     .replace(/,.*$/, " ")
     .replace(/-/g, " ")
@@ -198,6 +229,7 @@ export function itemKey(name: string): string {
 
   const words = text
     .split(" ")
+    .map((word) => SPELLINGS[word] ?? word)
     .filter((w) => w.length > 1 && !DESCRIPTORS.has(w));
 
   text = words.join(" ").trim();
@@ -215,12 +247,20 @@ export function itemKey(name: string): string {
       }
       return word;
     })
+    .map((word) => SPELLINGS[word] ?? word)
     .join(" ");
 
   return SYNONYMS[text] ?? text;
 }
 
 export function aisleFor(key: string): Aisle {
+  // "olive oil" is not produce and "chicken stock" is not meat, but "chili
+  // powder" is still a spice.
+  if (KEEPS.test(key)) {
+    const spices = AISLE_RULES.find(([aisle]) => aisle === "spices")![1];
+    return spices.test(key) ? "spices" : "pantry";
+  }
+
   for (const [aisle, pattern] of AISLE_RULES) {
     if (pattern.test(key)) return aisle;
   }
@@ -257,13 +297,120 @@ export type ParsedIngredient = {
   raw_text: string;
   quantity: number | null;
   unit: string | null;
+  pack_size_qty: number | null;
+  pack_size_unit: string | null;
   item: string;
   item_key: string;
+  alt_item: string | null;
   note: string | null;
   aisle: Aisle;
   optional: boolean;
 };
 
+const OPTIONAL_PHRASE =
+  /\b(to taste|optional|as needed|as required|to (serve|garnish|decorate|finish)|for (serving|garnish|dusting|drizzling|greasing|frying))\b/i;
+
+/** Phrases that say something about the cook, not about the shopping. */
+const NOISE: RegExp[] = [
+  /^(?:to taste|as needed|as required|to serve|for (?:serving|garnish|dusting|drizzling|greasing))\b[,\s]*/i,
+  /,?\s*plus (?:more|extra)\b[^,]*/gi,
+  /\s+plus\s+[\d\s./]+[a-z]+s?(?=\s)/gi,
+  /\s+(?:mixed|combined|whisked|blended|dissolved|thinned)\s+(?:with|in)\s.*$/i,
+  /,?\s*divided\b/gi,
+  /,?\s*or (?:more|less) to taste\b/gi,
+  /,?\s*if (?:you like|desired|needed|using|preferred)\b/gi,
+  /,?\s*at room temperature\b/gi,
+  /,?\s*\(?optional\)?\s*$/i,
+];
+
+/**
+ * The one that has to survive real writing. Eats a line from the left:
+ * quantity, then a package size, then a unit, and calls the remainder food.
+ */
+export function parseIngredientLine(line: string, position: number): ParsedIngredient | null {
+  const raw = line.replace(/\s+/g, " ").trim();
+  if (!raw || raw.length > 300) return null;
+
+  let text = raw.replace(/^[-*•·–—\s]+/, "");
+  const optional = OPTIONAL_PHRASE.test(text);
+  const notes: string[] = [];
+
+  // "Juice of 1 lemon", "Zest of 2 limes" — the amount hides behind the noun.
+  const of = text.match(/^(juice|zest|rind|peel|leaves)\s+of\s+/i);
+  if (of) {
+    notes.push(of[1].toLowerCase());
+    text = text.slice(of[0].length);
+  }
+
+  for (const pattern of NOISE) text = text.replace(pattern, "");
+  text = text.trim();
+  if (!text) return null;
+
+  const { quantity: amount, rest: afterAmount } = takeAmount(text);
+  const { packQuantity, packUnit, rest: afterPack } = takePackSize(afterAmount);
+  const { unit, rest: afterUnit } = takeUnit(afterPack);
+
+  // "1 can (400g) chopped tomatoes" — the size can sit behind its container too.
+  let packSize = { quantity: packQuantity, unit: packUnit };
+  let body = afterUnit;
+  if (packSize.quantity === null && unit && CONTAINERS.has(unit)) {
+    const trailing = body.match(/^\s*\(([^)]{1,24})\)\s*/);
+    if (trailing) {
+      const inner = parseMeasure(trailing[1].replace(/-/g, " "));
+      if (inner.quantity !== null && inner.unit) {
+        packSize = { quantity: inner.quantity, unit: inner.unit };
+        body = body.slice(trailing[0].length);
+      }
+    }
+  }
+
+  let quantity = amount === null ? null : Math.round(amount * 1000) / 1000;
+  if (quantity === null && unit) quantity = 1;
+
+  let name = body.replace(/^(?:of|the)\s+/i, "").trim();
+
+  // "1 tbsp butter or olive oil" — buy the first, remember the second.
+  let alt: string | null = null;
+  const orSplit = name.split(/\s+or\s+/i);
+  if (orSplit.length === 2 && orSplit[0].trim().length > 2 && orSplit[1].trim().length > 2) {
+    name = orSplit[0].trim();
+    alt = orSplit[1].trim().replace(/[.,]$/, "");
+  }
+
+  // A parenthetical this far along is a remark, not a measurement.
+  const aside = name.match(/\(([^)]*)\)/);
+  if (aside) {
+    if (aside[1].trim()) notes.push(aside[1].trim());
+    name = name.replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
+  }
+
+  const [head, ...tail] = name.split(",");
+  const prep = tail.join(",").trim();
+  if (prep) notes.push(prep);
+
+  const item = head.replace(/[.;:]+$/, "").trim();
+  if (!item) return null;
+
+  const key = itemKey(item);
+  if (!key) return null;
+
+  return {
+    position,
+    raw_text: raw,
+    quantity,
+    unit,
+    pack_size_qty: packSize.quantity,
+    pack_size_unit: packSize.unit,
+    item: titleCase(item),
+    item_key: key,
+    alt_item: alt,
+    note: notes.length ? notes.join(", ") : null,
+    aisle: aisleFor(key),
+    optional,
+  };
+}
+
+/** TheMealDB and friends hand over the measure and the name separately. */
 export function parseIngredient(
   measure: string | null | undefined,
   name: string,
@@ -272,42 +419,21 @@ export function parseIngredient(
   const cleanName = name?.trim();
   if (!cleanName) return null;
 
-  const { quantity, unit, note } = parseMeasure(measure);
+  const line = [measure?.trim(), cleanName].filter(Boolean).join(" ").trim();
+  const parsed = parseIngredientLine(line, position);
+  if (!parsed) return null;
+
+  // The name column is authoritative — a measure can't rename the food.
   const key = itemKey(cleanName);
-  if (!key) return null;
+  if (!key) return parsed;
 
-  const [baseName, ...preparation] = cleanName.split(",");
-  const prep = preparation.join(",").trim();
-
-  const optional = /optional|to taste|for (serving|garnish)/i.test(
-    `${measure ?? ""} ${cleanName}`,
-  );
-
+  const [base] = cleanName.split(",");
   return {
-    position,
-    raw_text: [measure?.trim(), cleanName].filter(Boolean).join(" ").trim(),
-    quantity,
-    unit,
-    item: titleCase(baseName.trim() || cleanName),
+    ...parsed,
+    item: titleCase(base.trim() || cleanName),
     item_key: key,
-    note: prep || note,
     aisle: aisleFor(key),
-    optional,
   };
-}
-
-export function parseIngredientLine(line: string, position: number): ParsedIngredient | null {
-  const text = line.trim();
-  if (!text) return null;
-
-  const match = text.match(
-    /^((?:\d+[\s\-\/¼½¾⅓⅔⅛⅜⅝⅞.]*)+\s*[a-zA-Z.]*\s*)(.*)$/,
-  );
-
-  if (match && match[2].trim()) {
-    return parseIngredient(match[1], match[2], position);
-  }
-  return parseIngredient(null, text, position);
 }
 
 function titleCase(text: string): string {

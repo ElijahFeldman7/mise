@@ -7,13 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "tsx scripts/seed-recipes.ts"
+    "seed": "tsx scripts/seed/run.ts",
+    "check:parse": "tsx scripts/check-parse.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",
     "lucide-react": "^1.33.0",
     "next": "16.3.1",
+    "node-html-parser": "^9.0.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "tesseract.js": "^7.0.0"

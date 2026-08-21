@@ -5,6 +5,9 @@ import HouseholdName from "./HouseholdName";
 import InviteCode from "./InviteCode";
 import JoinAnother from "./JoinAnother";
 import MemberRow from "./MemberRow";
+import CooksFor from "./CooksFor";
+import { dietSentence, householdDiet } from "@/lib/server/diet";
+import { DIET_LABEL } from "@/lib/ingredients";
 
 export default async function HouseholdPage() {
   const session = await requireSession();
@@ -22,6 +25,7 @@ export default async function HouseholdPage() {
     : { data: [] };
 
   const byId = new Map((people ?? []).map((person) => [person.id as string, person]));
+  const diet = await householdDiet(session.household.id);
 
   const members = (memberRows ?? []).map((row) => {
     const person = byId.get(row.user_id as string);
@@ -42,6 +46,11 @@ export default async function HouseholdPage() {
 
       <div className="flex flex-col gap-[22px] px-5 pt-2">
         <HouseholdName name={session.household.name} canEdit={session.role === "owner"} />
+
+        <CooksFor
+          count={session.household.cooks_for ?? 2}
+          diet={dietSentence(diet.dietTags, DIET_LABEL)}
+        />
 
         <div className="-mt-2">
           <Heading>Who&apos;s in it</Heading>

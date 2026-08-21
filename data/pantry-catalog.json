@@ -1,0 +1,69 @@
+{
+  "groups": [
+    {
+      "key": "spices",
+      "label": "Spices & dried herbs",
+      "items": [
+        "Salt", "Black pepper", "Cumin", "Coriander seeds", "Paprika", "Smoked paprika",
+        "Chilli powder", "Chilli flakes", "Cayenne", "Turmeric", "Cinnamon", "Nutmeg",
+        "Cloves", "Cardamom", "Allspice", "Bay leaves", "Oregano", "Thyme", "Rosemary",
+        "Sage", "Garam masala", "Curry powder", "Five spice", "Za'atar", "Sumac",
+        "Mustard seeds", "Fennel seeds", "Sesame seeds", "Ground ginger", "Garlic powder",
+        "Onion powder", "Italian seasoning", "Saffron", "Vanilla extract"
+      ]
+    },
+    {
+      "key": "oils",
+      "label": "Oils & vinegars",
+      "items": [
+        "Olive oil", "Vegetable oil", "Sesame oil", "Coconut oil", "Cooking spray",
+        "White vinegar", "Apple cider vinegar", "Balsamic vinegar", "Red wine vinegar",
+        "Rice vinegar"
+      ]
+    },
+    {
+      "key": "baking",
+      "label": "Baking",
+      "items": [
+        "Flour", "Self-rising flour", "Sugar", "Brown sugar", "Powdered sugar",
+        "Baking powder", "Baking soda", "Yeast", "Cornstarch", "Cocoa powder",
+        "Chocolate chips", "Honey", "Maple syrup", "Oats", "Breadcrumbs"
+      ]
+    },
+    {
+      "key": "grains",
+      "label": "Grains & pasta",
+      "items": [
+        "Rice", "Basmati rice", "Pasta", "Noodles", "Couscous", "Quinoa", "Lentils",
+        "Barley", "Polenta", "Tortillas"
+      ]
+    },
+    {
+      "key": "tins",
+      "label": "Tins & jars",
+      "items": [
+        "Canned tomatoes", "Tomato paste", "Coconut milk", "Chickpeas", "Black beans",
+        "Kidney beans", "Baked beans", "Tuna", "Sweetcorn", "Olives", "Capers",
+        "Peanut butter", "Jam", "Chicken stock", "Vegetable stock", "Beef stock"
+      ]
+    },
+    {
+      "key": "condiments",
+      "label": "Condiments",
+      "items": [
+        "Soy sauce", "Fish sauce", "Worcestershire sauce", "Ketchup", "Mustard",
+        "Dijon mustard", "Mayonnaise", "Hot sauce", "Sriracha", "Hoisin sauce",
+        "Oyster sauce", "Tahini", "Miso", "Harissa", "Gochujang", "Curry paste",
+        "Pesto", "Salsa", "BBQ sauce", "Marmite"
+      ]
+    },
+    {
+      "key": "fridge",
+      "label": "Fridge & freezer staples",
+      "items": [
+        "Butter", "Milk", "Eggs", "Cheddar", "Parmesan", "Yogurt", "Cream",
+        "Garlic", "Onions", "Lemons", "Ginger", "Frozen peas", "Ice cream"
+      ]
+    }
+  ]
+}

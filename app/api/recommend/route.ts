@@ -4,8 +4,8 @@ import { recommend } from "@/lib/recommend";
 import {
   loadCandidates, loadOnHand, loadPlannedThisWeek, loadSignal,
 } from "@/lib/server/candidates";
+import { householdDiet } from "@/lib/server/diet";
 import { addDays, fromISODate, startOfWeek, toISODate } from "@/lib/dates";
-import type { DietFlag } from "@/lib/ingredients";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
   const weekStart = startOfWeek(date);
 
   const candidates = await loadCandidates(session.household.id);
+  const house = await householdDiet(session.household.id);
   const [signal, onHand, planned] = await Promise.all([
     loadSignal(session.household.id, candidates),
     loadOnHand(session.household.id),
@@ -39,8 +40,8 @@ export async function GET(request: NextRequest) {
       plannedRecipeIds: planned.recipeIds,
       date,
       slot,
-      dietTags: (session.profile.diet_tags ?? []) as DietFlag[],
-      avoidIngredients: session.profile.avoid_ingredients ?? [],
+      dietTags: house.dietTags,
+      avoidIngredients: house.avoid,
       weeknightMaxMinutes: session.profile.weeknight_max_minutes ?? 45,
     },
     limit,

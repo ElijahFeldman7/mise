@@ -69,7 +69,12 @@ export default function GroceryList({
       rows: byAisle.get(aisle)!,
     }));
 
-    if (manual.length) sections.push({ key: "manual", title: "Added by hand", rows: manual });
+    if (manual.length) {
+      const cupboard = manual.filter((item) => item.source === "pantry");
+      const byHand = manual.filter((item) => item.source !== "pantry");
+      if (cupboard.length) sections.push({ key: "pantry", title: "Run out at home", rows: cupboard });
+      if (byHand.length) sections.push({ key: "manual", title: "Added by hand", rows: byHand });
+    }
     return sections;
   }, [optimistic]);
 
@@ -132,15 +137,22 @@ export default function GroceryList({
                 {item.checked ? <CheckIcon size={12} /> : null}
               </button>
 
-              <span
-                className="flex-1 truncate text-sm"
-                style={
-                  item.checked
-                    ? { color: "var(--ink-faint)", textDecoration: "line-through" }
-                    : undefined
-                }
-              >
-                {item.item}
+              <span className="flex min-w-0 flex-1 items-baseline gap-[7px]">
+                <span
+                  className="truncate text-sm"
+                  style={
+                    item.checked
+                      ? { color: "var(--ink-faint)", textDecoration: "line-through" }
+                      : undefined
+                  }
+                >
+                  {item.item}
+                </span>
+                {item.note && !item.checked ? (
+                  <span className="flex-shrink-0 font-hand text-base text-ink-faint">
+                    {item.note}
+                  </span>
+                ) : null}
               </span>
 
               {item.checked && item.checked_via === "receipt" ? (
@@ -158,7 +170,7 @@ export default function GroceryList({
                 </span>
               )}
 
-              {item.source === "manual" ? (
+              {item.source === "manual" || item.source === "pantry" ? (
                 <button
                   type="button"
                   onClick={() =>

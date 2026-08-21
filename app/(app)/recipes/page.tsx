@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requireSession, photoUrl } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { formatMinutes } from "@/lib/dates";
+import { dietSentence, householdDiet } from "@/lib/server/diet";
+import { DIET_LABEL, itemKey } from "@/lib/ingredients";
 import Photo from "@/components/Photo";
 import Heading from "@/components/Heading";
 import SearchField from "./SearchField";
@@ -18,25 +20,49 @@ const FILTERS = [
 export default async function RecipesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; f?: string; pick?: string; slot?: string; time?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    f?: string;
+    pick?: string;
+    slot?: string;
+    time?: string;
+    all?: string;
+  }>;
 }) {
-  const { q, f, pick, slot, time } = await searchParams;
+  const { q, f, pick, slot, time, all } = await searchParams;
   const session = await requireSession();
   const supabase = await createClient();
 
+  const house = await householdDiet(session.household.id);
+  const filtering = !all && (house.dietTags.length > 0 || house.avoid.length > 0);
+
   let query = supabase
     .from("recipes")
-    .select("id, title, image_url, image_path, total_minutes, oven_temp_f, servings, household_id, category")
+    .select(
+      "id, title, image_url, image_path, total_minutes, oven_temp_f, servings, household_id, category, diet_flags, recipe_ingredients(item_key)",
+    )
     .or(`is_public.eq.true,household_id.eq.${session.household.id}`)
-    .limit(60);
+    .limit(filtering ? 200 : 60);
+
+  if (filtering && house.dietTags.length) query = query.contains("diet_flags", house.dietTags);
 
   if (q) query = query.ilike("title", `%${q}%`);
   if (f === "quick") query = query.lte("total_minutes", 30);
   if (f === "veg") query = query.contains("diet_flags", ["vegetarian"]);
   if (f === "mine") query = query.eq("household_id", session.household.id);
 
-  const { data: recipes } = await query.order("title");
+  const { data: found } = await query.order("title");
 
+  // Banned ingredients need the ingredient rows, so that part is sifted here.
+  const banned = new Set(house.avoid.map((item) => itemKey(item)));
+  const kept = (found ?? []).filter((recipe) => {
+    if (!filtering || !banned.size) return true;
+    const keys = (recipe.recipe_ingredients ?? []) as Array<{ item_key: string }>;
+    return !keys.some((row) => banned.has(row.item_key));
+  });
+
+  const recipes = kept.slice(0, 60);
+  const hidden = filtering ? Math.max(0, (found ?? []).length - kept.length) : 0;
   const picking = Boolean(pick);
 
   return (
@@ -45,9 +71,14 @@ export default async function RecipesPage({
         <h1 className="text-[18px] font-semibold -tracking-[0.02em]">
           {picking ? `Pick a ${slot?.toLowerCase() ?? "recipe"}` : "Recipes"}
         </h1>
-        <Link href="/recipes/new" className="text-[13.5px] text-accent">
-          Write one
-        </Link>
+        <div className="flex items-center gap-[18px]">
+          <Link href="/recipes/import" className="text-[13.5px] text-accent">
+            Import
+          </Link>
+          <Link href="/recipes/new" className="text-[13.5px] text-accent">
+            Write one
+          </Link>
+        </div>
       </header>
 
       <div className="flex flex-col gap-[18px] px-5 pt-1">
@@ -94,12 +125,32 @@ export default async function RecipesPage({
         ) : null}
 
         <div className="flex items-baseline justify-between">
-          <Heading>{q ? "Matches" : "Everything"}</Heading>
-          <span className="text-xs text-ink-faint">{recipes?.length ?? 0}</span>
+          <Heading>{q ? "Matches" : filtering ? dietSentence(house.dietTags, DIET_LABEL) || "Everything" : "Everything"}</Heading>
+          <span className="text-xs text-ink-faint">{recipes.length}</span>
         </div>
 
+        {filtering ? (
+          <Link
+            href={`/recipes?${new URLSearchParams({
+              ...(q ? { q } : {}),
+              ...(f ? { f } : {}),
+              all: "1",
+            }).toString()}`}
+            className="-mt-3 text-[12.5px] text-ink-faint"
+          >
+            only what the house eats — show everything
+          </Link>
+        ) : all ? (
+          <Link
+            href={`/recipes?${new URLSearchParams({ ...(q ? { q } : {}), ...(f ? { f } : {}) }).toString()}`}
+            className="-mt-3 text-[12.5px] text-accent"
+          >
+            showing everything — back to what the house eats
+          </Link>
+        ) : null}
+
         <div className="grid grid-cols-2 gap-[14px] pb-4">
-          {(recipes ?? []).map((recipe) => {
+          {recipes.map((recipe) => {
             const image = photoUrl(
               "recipe-photos",
               recipe.image_path as string | null,
@@ -151,9 +202,10 @@ export default async function RecipesPage({
           })}
         </div>
 
-        {(recipes ?? []).length === 0 ? (
+        {recipes.length === 0 ? (
           <p className="pb-8 text-[13.5px] text-ink-faint">
             Nothing matches that. {q ? "Try a shorter word." : ""}
+            {hidden ? ` ${hidden} are hidden by what the house eats.` : ""}
           </p>
         ) : null}
       </div>

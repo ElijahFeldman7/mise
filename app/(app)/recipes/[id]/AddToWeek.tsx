@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addPlanEntry } from "@/lib/actions/plan";
 import { DAY_NAMES, addDays, startOfWeek, toISODate } from "@/lib/dates";
+import { usePortions } from "./Portions";
 
 const SLOTS = ["Breakfast", "Lunch", "Dinner", "Prep"];
 const TIMES: Record<string, string> = {
@@ -13,14 +14,9 @@ const TIMES: Record<string, string> = {
   Prep: "16:00:00",
 };
 
-export default function AddToWeek({
-  recipeId,
-  servings,
-}: {
-  recipeId: string;
-  servings: number;
-}) {
+export default function AddToWeek({ recipeId }: { recipeId: string }) {
   const router = useRouter();
+  const { servings } = usePortions();
   const [open, setOpen] = useState(false);
   const [slot, setSlot] = useState("Dinner");
   const [pending, startTransition] = useTransition();
@@ -78,7 +74,7 @@ export default function AddToWeek({
                   slotLabel: slot,
                   slotTime: TIMES[slot] ?? null,
                   recipeId,
-                  servings: Math.min(servings, 4),
+                  servings,
                 });
                 router.push(`/day/${toISODate(day)}`);
               })

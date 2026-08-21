@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { currentListId } from "@/lib/server/list";
 import { startOfWeek, toISODate, formatWeekRange } from "@/lib/dates";
 import { CameraIcon } from "@/components/Icons";
+import Segments from "./Segments";
+import Nudge from "./Nudge";
 import GroceryList from "./GroceryList";
 import type { GroceryItem } from "@/lib/types";
 
@@ -42,6 +44,17 @@ export default async function ListPage() {
       .gte("on_date", toISODate(weekStart)),
   ]);
 
+  const { data: running } = await supabase
+    .from("pantry_items")
+    .select("item, item_key, used_since_buy")
+    .eq("household_id", session.household.id)
+    .eq("status", "have")
+    .eq("kind", "staple")
+    .gte("used_since_buy", 6)
+    .order("used_since_buy", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   const people = new Map(
     (members ?? []).map((person) => [
       person.id as string,
@@ -53,11 +66,28 @@ export default async function ListPage() {
     <>
       <header className="flex h-[58px] items-center justify-between px-5">
         <h1 className="text-[18px] font-semibold -tracking-[0.02em]">Grocery list</h1>
-        <Link href="/list/scan" className="flex items-center gap-[7px] text-[13.5px] text-accent">
-          <CameraIcon size={17} />
-          <span>Scan a receipt</span>
-        </Link>
+        <div className="flex items-center gap-[18px]">
+          <Link href="/list/receipts" className="text-[13.5px] text-ink-soft">
+            Receipts
+          </Link>
+          <Link href="/list/scan" className="flex items-center gap-[7px] text-[13.5px] text-accent">
+            <CameraIcon size={17} />
+            <span>Scan</span>
+          </Link>
+        </div>
       </header>
+
+      <Segments active="/list" />
+
+      {running ? (
+        <div className="px-5 pt-3">
+          <Nudge
+            item={running.item as string}
+            itemKey={running.item_key as string}
+            times={running.used_since_buy as number}
+          />
+        </div>
+      ) : null}
 
       <GroceryList
         items={(items ?? []) as GroceryItem[]}

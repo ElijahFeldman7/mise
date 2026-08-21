@@ -6,6 +6,7 @@ export type Household = {
   id: string;
   name: string;
   invite_code: string;
+  cooks_for: number;
   created_by: string | null;
   created_at: string;
 };
@@ -37,7 +38,7 @@ export type Recipe = {
   id: string;
   title: string;
   description: string | null;
-  source: "themealdb" | "curated" | "user";
+  source: "themealdb" | "curated" | "user" | "import" | "wikibooks" | "usda" | "gutenberg";
   source_id: string | null;
   source_url: string | null;
   image_url: string | null;
@@ -56,6 +57,9 @@ export type Recipe = {
   owner_id: string | null;
   household_id: string | null;
   forked_from: string | null;
+  import_domain: string | null;
+  fingerprint: string | null;
+  yield_text: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -67,8 +71,11 @@ export type RecipeIngredient = {
   raw_text: string | null;
   quantity: number | null;
   unit: string | null;
+  pack_size_qty: number | null;
+  pack_size_unit: string | null;
   item: string;
   item_key: string;
+  alt_item: string | null;
   note: string | null;
   aisle: Aisle;
   optional: boolean;
@@ -132,17 +139,29 @@ export type GroceryItem = {
   checked_at: string | null;
   checked_by: string | null;
   checked_via: "tap" | "receipt" | null;
-  source: "plan" | "manual" | "receipt";
+  note: string | null;
+  source: "plan" | "manual" | "receipt" | "pantry";
   from_recipes: string[];
   added_by: string | null;
   position: number;
   created_at: string;
 };
 
+export type PantryStatus = "have" | "low" | "out";
+
 export type PantryItem = {
   household_id: string;
   item_key: string;
   item: string;
+  aisle: Aisle;
+  kind: "staple" | "stock";
+  status: PantryStatus;
+  quantity: number | null;
+  unit: string | null;
+  updated_at: string;
+  last_used_at: string | null;
+  used_since_buy: number;
+  added_by: string | null;
 };
 
 export type Receipt = {
@@ -155,6 +174,22 @@ export type Receipt = {
   raw_text: string | null;
   line_count: number;
   matched_count: number;
+  total: number | null;
+  currency: string;
+  created_at: string;
+};
+
+export type RecipeImport = {
+  id: string;
+  household_id: string;
+  url: string;
+  url_hash: string;
+  domain: string | null;
+  recipe_id: string | null;
+  strategy: string | null;
+  status: "ok" | "failed";
+  error: string | null;
+  imported_by: string | null;
   created_at: string;
 };
 
@@ -203,6 +238,7 @@ export type Database = {
       receipts: Table<Receipt>;
       receipt_lines: Table<ReceiptLine>;
       recipe_events: Table<RecipeEvent>;
+      recipe_imports: Table<RecipeImport>;
     };
     Views: Record<string, never>;
     Functions: {

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
+import { guessTotal } from "@/lib/ocr";
 import type { ReceiptLine } from "@/lib/types";
 
 export type ReceiptDecision = {
@@ -31,6 +32,7 @@ export async function applyReceipt(input: {
   const supabase = await createClient();
 
   const accepted = input.decisions.filter((d) => d.accepted && d.itemId);
+  const { total, currency } = guessTotal(input.rawText);
 
   const { data: receipt, error } = await supabase
     .from("receipts")
@@ -43,6 +45,8 @@ export async function applyReceipt(input: {
       raw_text: input.rawText.slice(0, 20000),
       line_count: input.decisions.length,
       matched_count: accepted.length,
+      total,
+      currency,
     })
     .select("id")
     .single();
@@ -65,7 +69,9 @@ export async function applyReceipt(input: {
 
   if (accepted.length) {
     const now = new Date().toISOString();
-    await supabase
+    const ids = accepted.map((d) => d.itemId as string);
+
+    const { data: bought } = await supabase
       .from("grocery_items")
       .update({
         checked: true,
@@ -73,9 +79,38 @@ export async function applyReceipt(input: {
         checked_by: session.userId,
         checked_via: "receipt",
       })
-      .in("id", accepted.map((d) => d.itemId as string));
+      .in("id", ids)
+      .select("item_key");
+
+    // Buying it fills the cupboard back up.
+    const keys = [...new Set((bought ?? []).map((row) => row.item_key as string))];
+    if (keys.length) {
+      await supabase
+        .from("pantry_items")
+        .update({ status: "have", used_since_buy: 0, updated_at: now })
+        .eq("household_id", session.household.id)
+        .in("item_key", keys);
+    }
   }
 
   revalidatePath("/list");
+  revalidatePath("/list/cupboard");
+  revalidatePath("/list/receipts");
   return { ok: true, checked: accepted.length, receiptId: receipt.id as string };
+}
+
+export async function deleteReceipt(id: string) {
+  const session = await requireSession();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("receipts")
+    .delete()
+    .eq("id", id)
+    .eq("household_id", session.household.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/list/receipts");
+  return { ok: true };
 }

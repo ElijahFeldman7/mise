@@ -244,3 +244,34 @@ export function guessDate(rawText: string): string | null {
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
+
+/**
+ * The total, which the line parser throws away as noise on purpose. Read from
+ * the bottom up: the last "total" that isn't a subtotal is the one that was paid.
+ */
+export function guessTotal(rawText: string): { total: number | null; currency: string } {
+  const lines = splitReceiptLines(rawText);
+  const currency = /£/.test(rawText) ? "GBP" : /€/.test(rawText) ? "EUR" : "USD";
+
+  const candidates: Array<{ total: number; rank: number }> = [];
+
+  for (const line of lines) {
+    const amount = line.match(/(\d+[.,]\d{2})\s*$/);
+    if (!amount) continue;
+    const value = Number(amount[1].replace(",", "."));
+    if (!Number.isFinite(value) || value <= 0 || value > 10000) continue;
+
+    const label = line.slice(0, amount.index).toLowerCase();
+    if (/\bsub\s*total\b/.test(label)) candidates.push({ total: value, rank: 3 });
+    else if (/\b(amount due|balance due|total due|grand total)\b/.test(label)) {
+      candidates.push({ total: value, rank: 0 });
+    } else if (/\btotal\b/.test(label)) candidates.push({ total: value, rank: 1 });
+    else if (/\b(visa|mastercard|debit|credit|cash|tender|paid)\b/.test(label)) {
+      candidates.push({ total: value, rank: 2 });
+    }
+  }
+
+  if (!candidates.length) return { total: null, currency };
+  candidates.sort((a, b) => a.rank - b.rank || b.total - a.total);
+  return { total: candidates[0].total, currency };
+}

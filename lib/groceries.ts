@@ -1,5 +1,5 @@
 import { isStaple, type Aisle } from "./ingredients";
-import { mergeAmounts, scaleAmount } from "./units";
+import { dimensionOf, formatQuantity, fromBase, mergeAmounts, scaleAmount, toBase } from "./units";
 import type { PlanEntry, RecipeIngredient } from "./types";
 
 export type PlannedRecipe = {
@@ -17,7 +17,16 @@ export type GroceryRow = {
   display_qty: string;
   aisle: Aisle;
   from_recipes: string[];
+  note: string | null;
   position: number;
+};
+
+export type PantryEntry = {
+  item_key: string;
+  status: "have" | "low" | "out";
+  kind: "staple" | "stock";
+  quantity: number | null;
+  unit: string | null;
 };
 
 const AISLE_RANK: Record<Aisle, number> = {
@@ -25,10 +34,7 @@ const AISLE_RANK: Record<Aisle, number> = {
   pantry: 5, spices: 6, frozen: 7, drinks: 8, household: 9, other: 10,
 };
 
-export function buildGroceryRows(
-  planned: PlannedRecipe[],
-  pantryKeys: Set<string> = new Set(),
-): GroceryRow[] {
+export function buildGroceryRows(planned: PlannedRecipe[]): GroceryRow[] {
   type Bucket = {
     item: string;
     aisle: Aisle;
@@ -46,7 +52,6 @@ export function buildGroceryRows(
       const key = ingredient.item_key;
       if (!key) continue;
       if (isStaple(key)) continue;
-      if (pantryKeys.has(key)) continue;
       if (ingredient.optional) continue;
 
       const bucket = buckets.get(key) ?? {
@@ -77,6 +82,7 @@ export function buildGroceryRows(
       display_qty: merged.display,
       aisle: bucket.aisle,
       from_recipes: [...bucket.recipes],
+      note: null,
       position: 0,
     });
   }
@@ -87,6 +93,69 @@ export function buildGroceryRows(
   });
 
   return rows.map((row, index) => ({ ...row, position: index }));
+}
+
+/** Two count units are only comparable when they are the same count of the same thing. */
+function comparable(a: string | null, b: string | null): boolean {
+  const dimension = dimensionOf(a);
+  if (dimension !== dimensionOf(b)) return false;
+  if (dimension !== "count") return true;
+  return (a ?? "each") === (b ?? "each");
+}
+
+/**
+ * Subtracts the cupboard from the list.
+ *
+ * Need 500g of flour with a kilo in the tin: the row disappears. Need 500g with
+ * 200g left: the row says 300g, and mentions the 200g so it doesn't read like a
+ * mistake. Need two tablespoons of cumin against a jar of unknown size: gone,
+ * because "have" means have. Nothing here ever converts weight into volume — a
+ * jar of harissa and two tablespoons of it stay incomparable, and it buys more.
+ */
+export function applyPantry(
+  rows: GroceryRow[],
+  pantry: Map<string, PantryEntry>,
+): GroceryRow[] {
+  const kept: GroceryRow[] = [];
+
+  for (const row of rows) {
+    const held = pantry.get(row.item_key);
+
+    if (!held || held.status === "out") {
+      kept.push(held ? { ...row, note: "you're out" } : row);
+      continue;
+    }
+
+    if (held.status === "low") {
+      kept.push({ ...row, note: "running low" });
+      continue;
+    }
+
+    if (held.quantity === null || row.quantity === null) continue;
+    if (!comparable(row.unit, held.unit)) {
+      kept.push(row);
+      continue;
+    }
+
+    const need = toBase(row.quantity, row.unit);
+    const have = toBase(held.quantity, held.unit);
+    if (need === null || have === null) {
+      kept.push(row);
+      continue;
+    }
+    if (have >= need - 0.01) continue;
+
+    const short = fromBase(need - have, dimensionOf(row.unit), row.unit);
+    kept.push({
+      ...row,
+      quantity: short.quantity,
+      unit: short.unit,
+      display_qty: formatQuantity(short.quantity, short.unit),
+      note: `you have ${formatQuantity(held.quantity, held.unit)}`,
+    });
+  }
+
+  return kept.map((row, index) => ({ ...row, position: index }));
 }
 
 export function diffGroceryRows(
@@ -106,10 +175,14 @@ export function diffGroceryRows(
   remove: string[];
 } {
   const existingByKey = new Map(
-    existing.filter((row) => row.source === "plan").map((row) => [row.item_key, row]),
+    existing
+      .filter((row) => row.source === "plan" || row.source === "pantry")
+      .map((row) => [row.item_key, row]),
   );
   const manualKeys = new Set(
-    existing.filter((row) => row.source !== "plan").map((row) => row.item_key),
+    existing
+      .filter((row) => row.source !== "plan" && row.source !== "pantry")
+      .map((row) => row.item_key),
   );
 
   const insert: GroceryRow[] = [];
@@ -133,7 +206,7 @@ export function diffGroceryRows(
   }
 
   const remove = [...existingByKey.values()]
-    .filter((row) => !seen.has(row.item_key) && !row.checked)
+    .filter((row) => row.source === "plan" && !seen.has(row.item_key) && !row.checked)
     .map((row) => row.id);
 
   return { insert, update, remove };

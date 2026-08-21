@@ -41,7 +41,7 @@ export async function addPlanEntry(input: {
     position: (siblings?.[0]?.position ?? -1) + 1,
     recipe_id: input.recipeId ?? null,
     free_text: input.recipeId ? null : (input.freeText ?? "Something"),
-    servings: input.servings ?? 2,
+    servings: input.servings ?? session.household.cooks_for ?? 2,
     created_by: session.userId,
   });
 
@@ -114,6 +114,36 @@ export async function markCooked(entryId: string, date: string) {
       recipe_id: entry.recipe_id,
       kind: "cooked",
     });
+
+    // Nobody measures what's left in a spice jar, but cooking with it counts.
+    const { data: used } = await supabase
+      .from("recipe_ingredients")
+      .select("item_key")
+      .eq("recipe_id", entry.recipe_id);
+
+    const keys = [...new Set((used ?? []).map((row) => row.item_key as string))];
+    if (keys.length) {
+      const { data: held } = await supabase
+        .from("pantry_items")
+        .select("item_key, item, aisle, used_since_buy")
+        .eq("household_id", session.household.id)
+        .eq("status", "have")
+        .in("item_key", keys);
+
+      if (held?.length) {
+        await supabase.from("pantry_items").upsert(
+          held.map((row) => ({
+            household_id: session.household.id,
+            item_key: row.item_key as string,
+            item: row.item as string,
+            aisle: row.aisle as string,
+            used_since_buy: ((row.used_since_buy as number) ?? 0) + 1,
+            last_used_at: cooked,
+          })),
+          { onConflict: "household_id,item_key" },
+        );
+      }
+    }
   }
 
   revalidatePath(`/day/${date}`);

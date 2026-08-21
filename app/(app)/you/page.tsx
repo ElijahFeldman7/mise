@@ -11,9 +11,9 @@ export default async function YouPage() {
 
   const { data: pantry } = await supabase
     .from("pantry_items")
-    .select("item_key, item")
+    .select("item_key, item, status")
     .eq("household_id", session.household.id)
-    .order("item");
+    .order("status").order("item");
 
   const name = session.profile.display_name ?? session.profile.email;
 
@@ -55,17 +55,26 @@ export default async function YouPage() {
           weeknightMax={session.profile.weeknight_max_minutes ?? 45}
         />
 
-        <Heading>Always in the cupboard</Heading>
+        <div className="flex items-baseline justify-between">
+          <Heading>In the cupboard</Heading>
+          <Link href="/list/cupboard" className="text-[12.5px] text-accent">
+            Open ›
+          </Link>
+        </div>
         <div className="-mt-3 flex flex-wrap gap-x-[18px] gap-y-2">
-          {(pantry ?? []).map((row) => (
-            <span key={row.item_key as string} className="text-[13.5px]">
+          {(pantry ?? []).slice(0, 30).map((row) => (
+            <span
+              key={row.item_key as string}
+              className="text-[13.5px]"
+              style={row.status === "have" ? undefined : { color: "var(--accent)" }}
+            >
               {row.item as string}
             </span>
           ))}
           {(pantry ?? []).length === 0 ? (
-            <span className="text-[13px] text-ink-faint">
-              Tap &quot;always have&quot; on any list row and it moves here.
-            </span>
+            <Link href="/list/cupboard" className="text-[13px] text-ink-faint">
+              Nothing in yet — tap what you keep at home and it stops showing up on the list.
+            </Link>
           ) : null}
         </div>
 

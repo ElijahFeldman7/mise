@@ -18,7 +18,7 @@ export async function toggleGroceryItem(id: string, checked: boolean) {
   const session = await requireSession();
   const supabase = await createClient();
 
-  await supabase
+  const { data: item } = await supabase
     .from("grocery_items")
     .update({
       checked,
@@ -26,7 +26,18 @@ export async function toggleGroceryItem(id: string, checked: boolean) {
       checked_by: checked ? session.userId : null,
       checked_via: checked ? "tap" : null,
     })
-    .eq("id", id);
+    .eq("id", id)
+    .select("item_key")
+    .maybeSingle();
+
+  // Buying it is the answer to "have you still got any?".
+  if (checked && item) {
+    await supabase
+      .from("pantry_items")
+      .update({ status: "have", used_since_buy: 0, updated_at: new Date().toISOString() })
+      .eq("household_id", session.household.id)
+      .eq("item_key", item.item_key as string);
+  }
 
   revalidatePath("/list");
   return { ok: true };
@@ -90,18 +101,30 @@ export async function keepInPantry(item: string) {
   const supabase = await createClient();
   const key = itemKey(item);
 
-  await supabase
-    .from("pantry_items")
-    .upsert({ household_id: session.household.id, item_key: key, item });
+  await supabase.from("pantry_items").upsert(
+    {
+      household_id: session.household.id,
+      item_key: key,
+      item,
+      aisle: aisleFor(key),
+      kind: "staple",
+      status: "have",
+      added_by: session.userId,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "household_id,item_key" },
+  );
 
   await supabase
     .from("grocery_items")
     .delete()
     .eq("household_id", session.household.id)
     .eq("item_key", key)
-    .eq("source", "plan");
+    .in("source", ["plan", "pantry"])
+    .eq("checked", false);
 
   revalidatePath("/list");
+  revalidatePath("/list/cupboard");
   revalidatePath("/you");
   return { ok: true };
 }
@@ -114,6 +137,7 @@ export async function removeFromPantry(itemKeyValue: string) {
     .delete()
     .eq("household_id", session.household.id)
     .eq("item_key", itemKeyValue);
+  revalidatePath("/list/cupboard");
   revalidatePath("/you");
   return { ok: true };
 }

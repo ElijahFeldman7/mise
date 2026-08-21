@@ -149,3 +149,21 @@ export async function updateProfile(patch: {
   revalidatePath("/you");
   return { ok: true };
 }
+
+/** How many people the house cooks for — the default portion size everywhere. */
+export async function setCooksFor(count: number) {
+  const session = await requireSession();
+  const supabase = await createClient();
+
+  const clamped = Math.max(1, Math.min(20, Math.round(count)));
+  const { error } = await supabase
+    .from("households")
+    .update({ cooks_for: clamped })
+    .eq("id", session.household.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/household");
+  revalidatePath("/week");
+  return { ok: true, cooksFor: clamped };
+}

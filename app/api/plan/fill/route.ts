@@ -2,12 +2,12 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { recommend } from "@/lib/recommend";
+import { householdDiet } from "@/lib/server/diet";
 import {
   loadCandidates, loadOnHand, loadPlannedThisWeek, loadSignal,
 } from "@/lib/server/candidates";
 import { addDays, fromISODate, toISODate, weekDays } from "@/lib/dates";
 import { rebuildGroceryList } from "@/lib/server/list";
-import type { DietFlag } from "@/lib/ingredients";
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
   );
 
   const plannedRecipeIds = new Set(planned.recipeIds);
+  const house = await householdDiet(session.household.id);
   const plannedIngredientSets = [...planned.ingredientSets];
   const ingredientsById = new Map(candidates.map((c) => [c.id, c.ingredient_keys]));
 
@@ -59,8 +60,8 @@ export async function POST(request: NextRequest) {
         plannedRecipeIds,
         date: day,
         slot: "Dinner",
-        dietTags: (session.profile.diet_tags ?? []) as DietFlag[],
-        avoidIngredients: session.profile.avoid_ingredients ?? [],
+        dietTags: house.dietTags,
+        avoidIngredients: house.avoid,
         weeknightMaxMinutes: session.profile.weeknight_max_minutes ?? 45,
       },
       1,
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
       slot_label: "Dinner",
       slot_time: "18:30",
       recipe_id: best.candidate.id,
-      servings: 2,
+      servings: session.household.cooks_for ?? 2,
       created_by: session.userId,
     });
     events.push({
