@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
 
   const origin = requestOrigin(request);
   const next = new URL(request.url).searchParams.get("next") ?? "/week";
+  const join = new URL(request.url).searchParams.get("join")?.trim().slice(0, 16) || null;
 
   const state = crypto.randomUUID();
   const { verifier, challenge } = await pkcePair();
@@ -58,5 +59,6 @@ export async function GET(request: NextRequest) {
   response.cookies.set("g_oauth_state", state, base);
   response.cookies.set("g_oauth_verifier", verifier, base);
   response.cookies.set("g_oauth_next", next.startsWith("/") ? next : "/week", base);
+  if (join) response.cookies.set("g_oauth_join", join, base);
   return response;
 }

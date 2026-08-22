@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
   const storedState = request.cookies.get("g_oauth_state")?.value;
   const verifier = request.cookies.get("g_oauth_verifier")?.value;
   const nextCookie = request.cookies.get("g_oauth_next")?.value ?? "/week";
+  const joinCookie = request.cookies.get("g_oauth_join")?.value;
 
   if (!storedState || !verifier || storedState !== state) {
     return fail("invalid_state");
@@ -63,12 +64,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/signin?error=${encodeURIComponent(error.message)}`);
   }
 
+  let joinError: string | null = null;
+  if (joinCookie) {
+    const { error: joinRpcError } = await supabase.rpc("join_household", { code: joinCookie });
+    if (joinRpcError) joinError = joinRpcError.message;
+  }
+
   const forwardedHost = request.headers.get("x-forwarded-host");
   const isLocal = process.env.NODE_ENV === "development";
   const base = isLocal || !forwardedHost ? origin : `https://${forwardedHost}`;
 
-  const response = NextResponse.redirect(`${base}${nextCookie}`);
-  for (const name of ["g_oauth_state", "g_oauth_verifier", "g_oauth_next"]) {
+  const destination = joinCookie
+    ? `/household${joinError ? `?joinError=${encodeURIComponent(joinError)}` : ""}`
+    : nextCookie;
+
+  const response = NextResponse.redirect(`${base}${destination}`);
+  for (const name of ["g_oauth_state", "g_oauth_verifier", "g_oauth_next", "g_oauth_join"]) {
     response.cookies.delete(name);
   }
   return response;

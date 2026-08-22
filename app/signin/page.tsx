@@ -5,9 +5,9 @@ export const metadata = { title: "mise" };
 export default async function SignIn({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; join?: string }>;
 }) {
-  const { next, error } = await searchParams;
+  const { next, error, join } = await searchParams;
 
   return (
     <main className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-8">
@@ -29,7 +29,7 @@ export default async function SignIn({
           cross it off at the store.
         </p>
 
-        <SignInButton next={next} />
+        <SignInButton next={next} join={join} />
 
         {error ? (
           <p className="mt-5 text-center text-xs text-accent">

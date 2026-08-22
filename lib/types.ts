@@ -244,6 +244,10 @@ export type Database = {
     Views: Record<string, never>;
     Functions: {
       join_household: { Args: { code: string }; Returns: string };
+      search_profiles: {
+        Args: { query: string };
+        Returns: Array<{ id: string; display_name: string | null; email: string; avatar_url: string | null }>;
+      };
       is_admin: { Args: Record<string, never>; Returns: boolean };
       cuisine_counts: { Args: Record<string, never>; Returns: Array<{ cuisine: string; n: number }> };
     };

@@ -3,13 +3,19 @@ import { createClient } from "@/lib/supabase/server";
 import Heading from "@/components/Heading";
 import HouseholdName from "./HouseholdName";
 import InviteCode from "./InviteCode";
+import AddByName from "./AddByName";
 import JoinAnother from "./JoinAnother";
 import MemberRow from "./MemberRow";
 import CooksFor from "./CooksFor";
 import { dietSentence, householdDiet } from "@/lib/server/diet";
 import { DIET_LABEL } from "@/lib/ingredients";
 
-export default async function HouseholdPage() {
+export default async function HouseholdPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ joinError?: string }>;
+}) {
+  const { joinError } = await searchParams;
   const session = await requireSession();
   const supabase = await createClient();
 
@@ -45,6 +51,12 @@ export default async function HouseholdPage() {
       </header>
 
       <div className="flex flex-col gap-[22px] px-5 pt-2">
+        {joinError ? (
+          <p className="rounded-[3px] bg-accent-wash px-4 py-3 text-[13px] text-accent">
+            That invite code didn&apos;t work: {joinError}
+          </p>
+        ) : null}
+
         <HouseholdName name={session.household.name} canEdit={session.role === "owner"} />
 
         <CooksFor
@@ -69,6 +81,7 @@ export default async function HouseholdPage() {
 
         <Heading>Add someone</Heading>
         <InviteCode code={session.household.invite_code} canRoll={session.role === "owner"} />
+        {session.role === "owner" ? <AddByName /> : null}
 
         <p className="border-t border-rule pt-[18px] text-[12.5px] leading-relaxed text-ink-faint text-pretty">
           Everyone here sees the same week and the same list. Anything they tick off shows up on

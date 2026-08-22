@@ -32,6 +32,39 @@ export async function joinHousehold(code: string) {
   return { ok: true };
 }
 
+export async function searchProfiles(query: string) {
+  const session = await requireSession();
+  if (session.role !== "owner") return { error: "Only the owner can do that" };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("search_profiles", { query: query.trim() });
+  if (error) return { error: error.message };
+
+  return {
+    ok: true as const,
+    results: (data ?? []) as {
+      id: string;
+      display_name: string | null;
+      email: string;
+      avatar_url: string | null;
+    }[],
+  };
+}
+
+export async function addMemberByUserId(userId: string) {
+  const session = await requireSession();
+  if (session.role !== "owner") return { error: "Only the owner can do that" };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("household_members")
+    .insert({ household_id: session.household.id, user_id: userId, role: "member" });
+
+  if (error) return { error: error.message };
+  revalidatePath("/household");
+  return { ok: true };
+}
+
 export async function switchHousehold(householdId: string) {
   const session = await requireSession();
   const supabase = await createClient();
