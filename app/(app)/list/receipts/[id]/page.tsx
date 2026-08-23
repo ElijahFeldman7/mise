@@ -64,6 +64,18 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           <span className="text-[15px]">{money(receipt.total, receipt.currency)}</span>
         </div>
 
+        {receipt.location || receipt.phone ? (
+          <div className="-mt-3 text-[12px] text-ink-faint">
+            {[receipt.location, receipt.phone].filter(Boolean).join(" · ")}
+          </div>
+        ) : null}
+
+        {receipt.tax !== null ? (
+          <div className="-mt-3 text-[12px] text-ink-faint">
+            {money(receipt.tax, receipt.currency)} tax
+          </div>
+        ) : null}
+
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -80,7 +92,12 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
             <div className="pt-2">
               {matched.map((line) => (
                 <div key={line.id} className="flex h-9 items-center gap-3 border-b border-rule">
-                  <span className="flex-1 truncate text-sm">{line.parsed_name ?? line.raw_line}</span>
+                  <span className="flex-1 truncate text-sm">
+                    {line.parsed_name ?? line.raw_line}
+                    {line.quantity && line.quantity > 1 ? (
+                      <span className="text-ink-faint"> ×{line.quantity}</span>
+                    ) : null}
+                  </span>
                   <span className="font-hand text-base text-got">{LINE_NOTE[line.status]}</span>
                   <span className="w-[52px] text-right text-xs text-ink-faint">
                     {line.price !== null ? money(line.price, receipt.currency) : ""}

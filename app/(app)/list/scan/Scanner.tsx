@@ -3,8 +3,8 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  guessDate, guessStore, matchReceiptLines, parseReceiptLine, splitReceiptLines,
-  type LineMatch, type MatchTarget,
+  guessDate, guessLocation, guessPhone, guessStore, matchReceiptLines, parseReceiptLine,
+  splitReceiptLines, type LineMatch, type MatchTarget,
 } from "@/lib/ocr";
 import { prepareReceiptImage } from "@/lib/images";
 import { applyReceipt, type ReceiptDecision } from "@/lib/actions/receipt";
@@ -21,9 +21,17 @@ export default function Scanner({ targets }: { targets: MatchTarget[] }) {
   const [progress, setProgress] = useState(0);
   const [matches, setMatches] = useState<LineMatch[]>([]);
   const [accepted, setAccepted] = useState<Record<string, boolean>>({});
-  const [meta, setMeta] = useState<{ store: string | null; date: string | null; raw: string }>({
+  const [meta, setMeta] = useState<{
+    store: string | null;
+    date: string | null;
+    location: string | null;
+    phone: string | null;
+    raw: string;
+  }>({
     store: null,
     date: null,
+    location: null,
+    phone: null,
     raw: "",
   });
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +64,13 @@ export default function Scanner({ targets }: { targets: MatchTarget[] }) {
 
       const results = matchReceiptLines(lines, targets);
 
-      setMeta({ store, date: guessDate(text), raw: text });
+      setMeta({
+        store,
+        date: guessDate(text),
+        location: guessLocation(text),
+        phone: guessPhone(text),
+        raw: text,
+      });
       setMatches(results);
       setAccepted(
         Object.fromEntries(
@@ -75,6 +89,7 @@ export default function Scanner({ targets }: { targets: MatchTarget[] }) {
       raw: match.line.raw,
       parsedName: match.line.name,
       price: match.line.price,
+      quantity: match.line.quantity,
       itemId: match.itemId,
       confidence: match.confidence,
       accepted: Boolean(match.itemId && accepted[match.line.raw]),
@@ -83,6 +98,8 @@ export default function Scanner({ targets }: { targets: MatchTarget[] }) {
     startTransition(async () => {
       const result = await applyReceipt({
         store: meta.store,
+        location: meta.location,
+        phone: meta.phone,
         purchasedOn: meta.date,
         rawText: meta.raw,
         decisions,
@@ -183,6 +200,9 @@ export default function Scanner({ targets }: { targets: MatchTarget[] }) {
           <div className="mt-[3px] text-xs text-ink-faint">
             {matches.length} lines read, {auto.length + suggested.length} matched
           </div>
+          {meta.location ? (
+            <div className="mt-[2px] truncate text-[11px] text-ink-faint">{meta.location}</div>
+          ) : null}
         </div>
       </div>
 
@@ -210,7 +230,12 @@ export default function Scanner({ targets }: { targets: MatchTarget[] }) {
               >
                 {accepted[match.line.raw] ? <CheckIcon size={11} /> : null}
               </button>
-              <span className="flex-1 truncate text-[13.5px]">{match.itemName}</span>
+              <span className="flex-1 truncate text-[13.5px]">
+                {match.itemName}
+                {match.line.quantity && match.line.quantity > 1 ? (
+                  <span className="text-ink-faint"> ×{match.line.quantity}</span>
+                ) : null}
+              </span>
               <span className="truncate text-[11px] text-ink-faint">{match.line.raw}</span>
             </label>
           ))}
@@ -268,17 +293,30 @@ export default function Scanner({ targets }: { targets: MatchTarget[] }) {
               key={match.line.raw}
               className="flex h-[42px] items-center gap-3 border-b border-rule"
             >
-              <span className="flex-1 truncate text-[13.5px]">{match.line.name}</span>
+              <span className="flex-1 truncate text-[13.5px]">
+                {match.line.name}
+                {match.line.quantity && match.line.quantity > 1 ? (
+                  <span className="text-ink-faint"> ×{match.line.quantity}</span>
+                ) : null}
+              </span>
               <button
                 type="button"
-                onClick={() => startTransition(async () => void (await keepInPantry(match.line.name)))}
+                onClick={() =>
+                  startTransition(
+                    async () => void (await keepInPantry(match.line.name, match.line.quantity)),
+                  )
+                }
                 className="text-[13px] text-accent"
               >
                 pantry
               </button>
               <button
                 type="button"
-                onClick={() => startTransition(async () => void (await addManualItem(match.line.name)))}
+                onClick={() =>
+                  startTransition(
+                    async () => void (await addManualItem(match.line.name, match.line.quantity)),
+                  )
+                }
                 className="text-[13px] text-ink-soft"
               >
                 add

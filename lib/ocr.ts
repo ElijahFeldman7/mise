@@ -4,6 +4,7 @@ export type ParsedReceiptLine = {
   raw: string;
   name: string;
   price: number | null;
+  quantity: number | null;
 };
 
 export type LineMatch = {
@@ -95,6 +96,14 @@ export function parseReceiptLine(
     if (bare(line) === bare(context.store)) return null;
   }
 
+  // The header (store name, address, phone) isn't a purchase — guessLocation
+  // and guessPhone already pull it out separately.
+  if (context?.index !== undefined && context.index < 8) {
+    if (/([A-Za-z .'-]{2,}),?\s+([A-Z]{2})\s+(\d{5})(-\d{4})?\b/.test(line)) return null;
+    if (STREET_SUFFIX.test(line) && /^\d{1,6}\s+/.test(line)) return null;
+    if (/\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b/.test(line)) return null;
+  }
+
   let text = line;
 
   let price: number | null = null;
@@ -105,6 +114,18 @@ export function parseReceiptLine(
   }
 
   if (/@/.test(text) && /\/\s*(lb|kg|oz|ea)/i.test(text)) return null;
+
+  // A bare count at the front ("2 MILK 2% GAL") is how many were bought — but
+  // not when it's actually a pack/weight size ("12 PACK", "16 OZ").
+  let quantity: number | null = null;
+  const qtyMatch = text.match(/^(\d{1,2})\s*x?\s+([A-Za-z].*)$/i);
+  if (qtyMatch && !/^(oz|lb|lbs|g|kg|ml|l|ct|pk|pack|rl|gal|qt|ea)\b/i.test(qtyMatch[2])) {
+    const n = Number(qtyMatch[1]);
+    if (n >= 1 && n <= 24) {
+      quantity = n;
+      text = qtyMatch[2];
+    }
+  }
 
   text = text.replace(/^\d{4,}\s+/, "");
 
@@ -118,7 +139,7 @@ export function parseReceiptLine(
   const name = expandAbbreviations(text);
   if (!name) return null;
 
-  return { raw: line, name, price };
+  return { raw: line, name, price, quantity };
 }
 
 const PHRASE_FIXES: Array<[RegExp, string]> = [
@@ -234,6 +255,45 @@ export function guessStore(rawText: string): string | null {
   return null;
 }
 
+const STREET_SUFFIX =
+  /\b(st|street|ave|avenue|rd|road|blvd|boulevard|dr|drive|ln|lane|way|hwy|highway|pkwy|parkway|ct|court|cir|circle|plaza|suite|ste)\b\.?/i;
+
+/**
+ * The store's address, read from the header lines above the item list. Only
+ * trusted when it looks unambiguously like an address — a street line needs a
+ * recognizable suffix (Ave, Rd, ...) so it can't be confused for an item line.
+ */
+export function guessLocation(rawText: string): string | null {
+  const lines = splitReceiptLines(rawText).slice(0, 10);
+  const cityStateZip = /([A-Za-z .'-]{2,}),?\s+([A-Z]{2})\s+(\d{5})(?:-\d{4})?\b/;
+  const streetAddress = /^\d{1,6}\s+[A-Za-z0-9.,'#\- ]{4,45}$/;
+
+  let city: string | null = null;
+  let street: string | null = null;
+
+  for (const line of lines) {
+    if (!city) {
+      const match = line.match(cityStateZip);
+      if (match) city = `${match[1].trim()}, ${match[2]} ${match[3]}`;
+    }
+    if (!street && streetAddress.test(line) && STREET_SUFFIX.test(line)) {
+      street = line.trim();
+    }
+  }
+
+  if (street && city) return `${street}, ${city}`;
+  return city ?? street ?? null;
+}
+
+export function guessPhone(rawText: string): string | null {
+  const lines = splitReceiptLines(rawText).slice(0, 10);
+  for (const line of lines) {
+    const match = line.match(/\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b/);
+    if (match) return match[0].trim();
+  }
+  return null;
+}
+
 export function guessDate(rawText: string): string | null {
   const match = rawText.match(/\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/);
   if (!match) return null;
@@ -249,11 +309,14 @@ export function guessDate(rawText: string): string | null {
  * The total, which the line parser throws away as noise on purpose. Read from
  * the bottom up: the last "total" that isn't a subtotal is the one that was paid.
  */
-export function guessTotal(rawText: string): { total: number | null; currency: string } {
+export function guessTotal(
+  rawText: string,
+): { total: number | null; tax: number | null; currency: string } {
   const lines = splitReceiptLines(rawText);
   const currency = /£/.test(rawText) ? "GBP" : /€/.test(rawText) ? "EUR" : "USD";
 
   const candidates: Array<{ total: number; rank: number }> = [];
+  const taxCandidates: number[] = [];
 
   for (const line of lines) {
     const amount = line.match(/(\d+[.,]\d{2})\s*$/);
@@ -262,7 +325,8 @@ export function guessTotal(rawText: string): { total: number | null; currency: s
     if (!Number.isFinite(value) || value <= 0 || value > 10000) continue;
 
     const label = line.slice(0, amount.index).toLowerCase();
-    if (/\bsub\s*total\b/.test(label)) candidates.push({ total: value, rank: 3 });
+    if (/\btax\b/.test(label)) taxCandidates.push(value);
+    else if (/\bsub\s*total\b/.test(label)) candidates.push({ total: value, rank: 3 });
     else if (/\b(amount due|balance due|total due|grand total)\b/.test(label)) {
       candidates.push({ total: value, rank: 0 });
     } else if (/\btotal\b/.test(label)) candidates.push({ total: value, rank: 1 });
@@ -271,7 +335,8 @@ export function guessTotal(rawText: string): { total: number | null; currency: s
     }
   }
 
-  if (!candidates.length) return { total: null, currency };
+  const tax = taxCandidates.length ? taxCandidates[0] : null;
+  if (!candidates.length) return { total: null, tax, currency };
   candidates.sort((a, b) => a.rank - b.rank || b.total - a.total);
-  return { total: candidates[0].total, currency };
+  return { total: candidates[0].total, tax, currency };
 }

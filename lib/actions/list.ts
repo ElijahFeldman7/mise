@@ -43,7 +43,7 @@ export async function toggleGroceryItem(id: string, checked: boolean) {
   return { ok: true };
 }
 
-export async function addManualItem(text: string) {
+export async function addManualItem(text: string, quantity?: number | null) {
   const session = await requireSession();
   const trimmed = text.trim();
   if (!trimmed) return { error: "Nothing to add" };
@@ -55,15 +55,16 @@ export async function addManualItem(text: string) {
 
   const parsed = parseIngredientLine(trimmed, 0);
   const key = parsed?.item_key ?? itemKey(trimmed);
+  const finalQuantity = quantity ?? parsed?.quantity ?? null;
 
   const { error } = await supabase.from("grocery_items").insert({
     list_id: listId,
     household_id: session.household.id,
     item: parsed?.item ?? trimmed,
     item_key: key,
-    quantity: parsed?.quantity ?? null,
+    quantity: finalQuantity,
     unit: parsed?.unit ?? null,
-    display_qty: parsed ? formatQuantity(parsed.quantity, parsed.unit) || null : null,
+    display_qty: formatQuantity(finalQuantity, parsed?.unit ?? null) || null,
     aisle: (parsed?.aisle ?? aisleFor(key)) as Aisle,
     source: "manual",
     added_by: session.userId,
@@ -96,7 +97,7 @@ export async function clearCheckedItems() {
   return { ok: true };
 }
 
-export async function keepInPantry(item: string) {
+export async function keepInPantry(item: string, quantity?: number | null) {
   const session = await requireSession();
   const supabase = await createClient();
   const key = itemKey(item);
@@ -109,6 +110,7 @@ export async function keepInPantry(item: string) {
       aisle: aisleFor(key),
       kind: "staple",
       status: "have",
+      quantity: quantity ?? null,
       added_by: session.userId,
       updated_at: new Date().toISOString(),
     },

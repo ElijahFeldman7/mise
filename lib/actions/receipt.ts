@@ -10,6 +10,7 @@ export type ReceiptDecision = {
   raw: string;
   parsedName: string;
   price: number | null;
+  quantity: number | null;
   itemId: string | null;
   confidence: number;
   accepted: boolean;
@@ -23,6 +24,8 @@ function statusFor(decision: ReceiptDecision): ReceiptLine["status"] {
 
 export async function applyReceipt(input: {
   store: string | null;
+  location?: string | null;
+  phone?: string | null;
   purchasedOn: string | null;
   rawText: string;
   imagePath?: string | null;
@@ -32,7 +35,7 @@ export async function applyReceipt(input: {
   const supabase = await createClient();
 
   const accepted = input.decisions.filter((d) => d.accepted && d.itemId);
-  const { total, currency } = guessTotal(input.rawText);
+  const { total, tax, currency } = guessTotal(input.rawText);
 
   const { data: receipt, error } = await supabase
     .from("receipts")
@@ -41,11 +44,14 @@ export async function applyReceipt(input: {
       uploaded_by: session.userId,
       image_path: input.imagePath ?? null,
       store: input.store,
+      location: input.location ?? null,
+      phone: input.phone ?? null,
       purchased_on: input.purchasedOn,
       raw_text: input.rawText.slice(0, 20000),
       line_count: input.decisions.length,
       matched_count: accepted.length,
       total,
+      tax,
       currency,
     })
     .select("id")
@@ -60,6 +66,7 @@ export async function applyReceipt(input: {
         raw_line: decision.raw,
         parsed_name: decision.parsedName,
         price: decision.price,
+        quantity: decision.quantity,
         matched_item_id: decision.accepted ? decision.itemId : null,
         confidence: decision.confidence,
         status: statusFor(decision),
@@ -80,16 +87,33 @@ export async function applyReceipt(input: {
         checked_via: "receipt",
       })
       .in("id", ids)
-      .select("item_key");
+      .select("id, item_key");
 
     // Buying it fills the cupboard back up.
-    const keys = [...new Set((bought ?? []).map((row) => row.item_key as string))];
+    const keyById = new Map((bought ?? []).map((row) => [row.id as string, row.item_key as string]));
+    const keys = [...new Set(keyById.values())];
+
     if (keys.length) {
       await supabase
         .from("pantry_items")
         .update({ status: "have", used_since_buy: 0, updated_at: now })
         .eq("household_id", session.household.id)
         .in("item_key", keys);
+
+      // When the receipt line named a quantity, carry it onto the cupboard too.
+      const quantityByKey = new Map<string, number>();
+      for (const decision of accepted) {
+        const key = keyById.get(decision.itemId as string);
+        if (key && decision.quantity) quantityByKey.set(key, decision.quantity);
+      }
+
+      for (const [key, quantity] of quantityByKey) {
+        await supabase
+          .from("pantry_items")
+          .update({ quantity })
+          .eq("household_id", session.household.id)
+          .eq("item_key", key);
+      }
     }
   }
 

@@ -171,11 +171,14 @@ export type Receipt = {
   uploaded_by: string | null;
   image_path: string | null;
   store: string | null;
+  location: string | null;
+  phone: string | null;
   purchased_on: string | null;
   raw_text: string | null;
   line_count: number;
   matched_count: number;
   total: number | null;
+  tax: number | null;
   currency: string;
   created_at: string;
 };
@@ -200,6 +203,7 @@ export type ReceiptLine = {
   raw_line: string;
   parsed_name: string | null;
   price: number | null;
+  quantity: number | null;
   matched_item_id: string | null;
   confidence: number | null;
   status: "auto" | "suggested" | "confirmed" | "rejected" | "unmatched";
