@@ -15,7 +15,7 @@ export type RawRecipe = {
   ingredients: string[];
   instructions: string[];
   author: string | null;
-  strategy: "json-ld" | "microdata" | "heuristic";
+  strategy: "json-ld" | "microdata" | "heuristic" | "pasted";
 };
 
 type Json = Record<string, unknown>;
@@ -222,7 +222,7 @@ function fromMicrodata(root: HTMLElement): RawRecipe | null {
   };
 }
 
-const QUANTITY_HEAD = /^\s*(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞]|a |an |one |two |three |four |half )/i;
+export const QUANTITY_HEAD = /^\s*(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞]|a |an |one |two |three |four |half )/i;
 
 /**
  * Last resort, for pages with no structured data: the list whose items mostly

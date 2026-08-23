@@ -7,8 +7,8 @@ export type RecipeDraft = {
   title: string;
   description: string | null;
   imageUrl: string | null;
-  sourceUrl: string;
-  sourceDomain: string;
+  sourceUrl: string | null;
+  sourceDomain: string | null;
   servings: number;
   yieldText: string | null;
   totalMinutes: number | null;
@@ -119,8 +119,8 @@ export function fingerprintOf(title: string, keys: string[]): string {
   return createHash("sha1").update(`${name}|${food}`).digest("hex").slice(0, 20);
 }
 
-export function normalizeRecipe(raw: RawRecipe, pageUrl: string): RecipeDraft | null {
-  const title = raw.title?.trim();
+export function normalizeRecipe(raw: RawRecipe, pageUrl: string | null): RecipeDraft | null {
+  const title = raw.title?.trim() || (raw.strategy === "pasted" ? "Pasted recipe" : null);
   if (!title) return null;
 
   const ingredients: ParsedIngredient[] = [];
@@ -145,13 +145,13 @@ export function normalizeRecipe(raw: RawRecipe, pageUrl: string): RecipeDraft | 
   const totalMinutes = isoDurationToMinutes(raw.totalTime) ?? (parts > 0 ? parts : null);
 
   const keys = ingredients.map((row) => row.item_key);
-  const url = new URL(pageUrl);
-  const domain = url.hostname.replace(/^www\./, "");
+  const url = pageUrl ? new URL(pageUrl) : null;
+  const domain = url ? url.hostname.replace(/^www\./, "") : null;
 
   return {
     title: title.slice(0, 160),
     description: raw.description?.slice(0, 500) ?? null,
-    imageUrl: absoluteImage(raw.image, url),
+    imageUrl: url ? absoluteImage(raw.image, url) : null,
     sourceUrl: pageUrl,
     sourceDomain: domain,
     servings,

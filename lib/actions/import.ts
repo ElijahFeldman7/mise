@@ -6,6 +6,7 @@ import { requireSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { ImportError, canonicalUrl, fetchPage } from "@/lib/import/fetch";
 import { extractRecipe, readableLines } from "@/lib/import/extract";
+import { extractRecipeFromText } from "@/lib/import/parseText";
 import { normalizeRecipe, type RecipeDraft } from "@/lib/import/normalize";
 import type { Aisle } from "@/lib/types";
 
@@ -68,6 +69,30 @@ export async function importRecipeFromUrl(input: string): Promise<ImportResult> 
   return { ok: true, draft };
 }
 
+/**
+ * Same review-before-saving flow as the URL importer, but for a recipe typed
+ * or pasted straight in — a text message, a photo transcribed by hand, a book.
+ * No network fetch, so nothing here needs the SSRF guards `fetchPage` has.
+ */
+export async function importRecipeFromText(input: string): Promise<ImportResult> {
+  await requireSession();
+
+  const text = input.trim();
+  if (!text) return { ok: false, error: "Paste the recipe first" };
+
+  const raw = extractRecipeFromText(text);
+  const draft = raw ? normalizeRecipe(raw, null) : null;
+
+  if (!draft) {
+    return {
+      ok: false,
+      error: "Couldn't find ingredients or steps in that — try including an \"Ingredients\" line",
+    };
+  }
+
+  return { ok: true, draft };
+}
+
 /** Saves a reviewed draft into the household's own shelf. */
 export async function saveImportedRecipe(draft: RecipeDraft) {
   const session = await requireSession();
@@ -123,19 +148,21 @@ export async function saveImportedRecipe(draft: RecipeDraft) {
     );
   }
 
-  await supabase.from("recipe_imports").upsert(
-    {
-      household_id: session.household.id,
-      url: draft.sourceUrl,
-      url_hash: hashOf(draft.sourceUrl),
-      domain: draft.sourceDomain,
-      recipe_id: recipeId,
-      strategy: draft.strategy,
-      status: "ok",
-      imported_by: session.userId,
-    },
-    { onConflict: "household_id,url_hash" },
-  );
+  if (draft.sourceUrl) {
+    await supabase.from("recipe_imports").upsert(
+      {
+        household_id: session.household.id,
+        url: draft.sourceUrl,
+        url_hash: hashOf(draft.sourceUrl),
+        domain: draft.sourceDomain,
+        recipe_id: recipeId,
+        strategy: draft.strategy,
+        status: "ok",
+        imported_by: session.userId,
+      },
+      { onConflict: "household_id,url_hash" },
+    );
+  }
 
   revalidatePath("/recipes");
   return { ok: true, id: recipeId };
